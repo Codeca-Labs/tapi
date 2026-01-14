@@ -33,7 +33,13 @@ ifneq ($(wildcard $(capstone_lib)/libcapstone.so*),)
   have_capstone := 1
 endif
 
+# include roots
+# this is the important bit for: #include <tapi/test.h>
+cflags += -I$(include_dir)
+
+# optional: keep your old auto-discovered include dirs
 includes := $(shell find $(include_dir) -type d 2>/dev/null)
+includes += $(shell find $(src_dir) -type d 2>/dev/null)
 cflags += $(addprefix -I,$(includes))
 
 ifeq ($(have_capstone),1)
@@ -70,9 +76,9 @@ pkgconfigdir ?= $(libdir)/pkgconfig
 destdir ?=
 
 test_srcs := $(shell find $(test_dir) -maxdepth 1 -name '*.c' 2>/dev/null)
-test_objs := $(patsubst $(test_dir)/%.c,$(build_dir)/test/%.o,$(test_srcs))
 test_bins := $(patsubst $(test_dir)/%.c,$(bin_dir)/test_%,$(test_srcs))
 
+# tests include from bin/include so they exercise the staged public api
 test_cflags := -std=c17 -Wall -Wextra -g -O0 -I$(bin_inc_dir)
 test_ldflags := -L$(bin_dir) -Wl,-rpath,'$$ORIGIN'
 test_ldlibs := -l$(lib_name)
@@ -99,10 +105,12 @@ $(lib_file): $(objs)
 .PHONY: stage_headers
 stage_headers: $(project_headers_dst) $(capstone_headers_dst)
 
+# project headers -> bin/include (preserves include/tapi/... as bin/include/tapi/...)
 $(bin_inc_dir)/%: $(include_dir)/%
 	@$(mkdir) $(dir $@)
 	$(cp) $< $@
 
+# capstone headers -> bin/include (preserves capstone/... as bin/include/capstone/...)
 $(bin_inc_dir)/%: $(capstone_inc)/%
 	@$(mkdir) $(dir $@)
 	$(cp) $< $@
@@ -129,11 +137,7 @@ $(pc_file): $(lib_file)
 .PHONY: test
 test: all $(test_bins)
 
-$(build_dir)/test/%.o: $(test_dir)/%.c
-	@$(mkdir) $(dir $@)
-	$(cc) $(test_cflags) -c $< -o $@
-
-$(bin_dir)/test_%: $(build_dir)/test/%.o $(lib_file)
+$(bin_dir)/test_%: $(test_dir)/%.c $(lib_file) stage_headers stage_deps
 	@$(mkdir) $(dir $@)
 	$(cc) $(test_cflags) $< -o $@ $(test_ldflags) $(test_ldlibs)
 
