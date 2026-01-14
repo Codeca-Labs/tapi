@@ -2,8 +2,8 @@
  * @author Sean Hobeck
  * @date 2026-01-13
  */
-#ifndef TAPI_TEST_H
-#define TAPI_TEST_H
+#ifndef TAPI_H
+#define TAPI_H
 
 /*! @uses dyna_t. */
 #include <dyna.h>
@@ -51,4 +51,4 @@ typedef enum {
  */
 void
 tapi_setup(e_tapi_arch_t arch, const char* log_path);
-#endif /* TAPI_TEST_H */
+#endif /* TAPI_H */

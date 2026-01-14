@@ -2,7 +2,7 @@
  * @author Sean Hobeck
  * @date 2026-01-13
  */
-#include <tapi/test.h>
+#include <tapi/tapi.h>
 
 /*! @uses strdup. */
 #define _GNU_SOURCE 0
