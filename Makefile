@@ -13,6 +13,7 @@ endif
 
 # directories
 src_dir := src
+include_dir := include
 test_dir := test
 build_dir := build
 deps_dir := dependencies
@@ -74,12 +75,10 @@ libdir ?= $(prefix)/lib
 pkgconfigdir ?= $(libdir)/pkgconfig
 destdir ?=
 
-# test objects
 test_srcs := $(shell find $(test_dir) -maxdepth 1 -name '*.c' 2>/dev/null)
 test_objs := $(patsubst $(test_dir)/%.c,$(build_dir)/test/%.o,$(test_srcs))
 test_bins := $(patsubst $(test_dir)/%.c,$(bin_dir)/test_%,$(test_srcs))
 
-# test flags
 test_cflags := -std=c17 -Wall -Wextra -g -O0 -I$(bin_inc_dir)
 test_ldflags := -L$(bin_dir) -Wl,-rpath,'$$ORIGIN'
 test_ldlibs := -l$(lib_name)
@@ -114,7 +113,6 @@ $(bin_inc_dir)/%: $(capstone_inc)/%
 	@$(mkdir) $(dir $@)
 	$(cp) $< $@
 
-# stage the deps
 .PHONY: stage_deps
 stage_deps:
 ifeq ($(have_capstone),1)
@@ -149,7 +147,7 @@ $(bin_dir)/test_%: $(build_dir)/test/%.o $(lib_file)
 run_test: test
 	@set -e; for t in $(test_bins); do echo "running $$t"; $$t; done
 
-# install to /bin and /include specified
+# install to /bin, and /include specified
 .PHONY: install
 install: all
 	@$(mkdir) "$(destdir)$(libdir)"
@@ -165,7 +163,6 @@ uninstall:
 	@$(rm) "$(destdir)$(libdir)/lib$(lib_name).so"
 	@$(rm) "$(destdir)$(pkgconfigdir)/$(lib_name).pc"
 
-# clean
 .PHONY: clean
 clean:
 	$(rm) $(build_dir) $(bin_dir)
