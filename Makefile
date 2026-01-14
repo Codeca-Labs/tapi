@@ -1,33 +1,28 @@
-# toolchain
 cc := gcc
 rm := rm -rf
 cp := cp
 mkdir := mkdir -p
 
-# compiler flags
 cflags := -std=c17 -Wall -Wextra -g -O0 -fPIC
+
 release ?= 0
 ifeq ($(release),1)
   cflags := -std=c17 -Wall -Wextra -O2 -fPIC
 endif
 
-# directories
 src_dir := src
 include_dir := include
 test_dir := test
 build_dir := build
 deps_dir := dependencies
 
-# binary dirs
 bin_dir := bin
 bin_inc_dir := $(bin_dir)/include
 bin_pkg_dir := $(bin_dir)/lib/pkgconfig
 
-# lib names
 lib_name := tapi
 lib_file := $(bin_dir)/lib$(lib_name).so
 
-# dep dirs
 capstone_dir := $(deps_dir)/capstone
 capstone_dist := $(capstone_dir)/dist
 capstone_inc := $(capstone_dist)/include
@@ -38,8 +33,7 @@ ifneq ($(wildcard $(capstone_lib)/libcapstone.so*),)
   have_capstone := 1
 endif
 
-# includes
-includes := $(shell find $(src_dir) -type d 2>/dev/null)
+includes := $(shell find $(include_dir) -type d 2>/dev/null)
 cflags += $(addprefix -I,$(includes))
 
 ifeq ($(have_capstone),1)
@@ -57,8 +51,8 @@ ifeq ($(have_capstone),1)
   ldlibs += -lcapstone
 endif
 
-project_headers := $(shell find $(src_dir) -name '*.h')
-project_headers_dst := $(patsubst $(src_dir)/%,$(bin_inc_dir)/%,$(project_headers))
+project_headers := $(shell find $(include_dir) -name '*.h')
+project_headers_dst := $(patsubst $(include_dir)/%,$(bin_inc_dir)/%,$(project_headers))
 
 ifeq ($(have_capstone),1)
   capstone_headers := $(shell find $(capstone_inc) -name '*.h')
@@ -105,7 +99,7 @@ $(lib_file): $(objs)
 .PHONY: stage_headers
 stage_headers: $(project_headers_dst) $(capstone_headers_dst)
 
-$(bin_inc_dir)/%: $(src_dir)/%
+$(bin_inc_dir)/%: $(include_dir)/%
 	@$(mkdir) $(dir $@)
 	$(cp) $< $@
 
@@ -147,7 +141,6 @@ $(bin_dir)/test_%: $(build_dir)/test/%.o $(lib_file)
 run_test: test
 	@set -e; for t in $(test_bins); do echo "running $$t"; $$t; done
 
-# install to /bin, and /include specified
 .PHONY: install
 install: all
 	@$(mkdir) "$(destdir)$(libdir)"
@@ -157,7 +150,6 @@ install: all
 	@$(mkdir) "$(destdir)$(pkgconfigdir)"
 	@$(cp) $(pc_file) "$(destdir)$(pkgconfigdir)/"
 
-# remove from /bin and /include
 .PHONY: uninstall
 uninstall:
 	@$(rm) "$(destdir)$(libdir)/lib$(lib_name).so"
