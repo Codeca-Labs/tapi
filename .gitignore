@@ -54,6 +54,6 @@ dkms.conf
 # debug information files
 *.dwo
 
-# build objects
+# build object(s)
 /bin
 /build
