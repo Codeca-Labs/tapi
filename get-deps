@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DEPS_DIR="$ROOT_DIR/dependencies"
+CAPSTONE_DIR="$DEPS_DIR/capstone"
+BUILD_DIR="$CAPSTONE_DIR/build"
+DIST_DIR="$CAPSTONE_DIR/dist"
+
+mkdir -p "$DEPS_DIR"
+
+if [[ ! -d "$CAPSTONE_DIR/.git" ]]; then
+  echo "cloning into $CAPSTONE_DIR ..."
+  git clone --depth 1 https://github.com/capstone-engine/capstone.git "$CAPSTONE_DIR"
+else
+  echo "already cloned capstone, updating..."
+  git -C "$CAPSTONE_DIR" pull --ff-only
+fi
+
+echo "configuring build for capstone..."
+mkdir -p "$BUILD_DIR" "$DIST_DIR"
+
+cmake -S "$CAPSTONE_DIR" -B "$BUILD_DIR" \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+  -DCAPSTONE_BUILD_SHARED=ON \
+  -DCAPSTONE_BUILD_STATIC=OFF \
+  -DCAPSTONE_BUILD_TESTS=OFF \
+  -DCAPSTONE_BUILD_CSTOOL=OFF \
+  -DCMAKE_INSTALL_PREFIX="$DIST_DIR"
+
+echo "building capstone..."
+cmake --build "$BUILD_DIR" --config Release
+
+echo "installing to $DIST_DIR ..."
+cmake --install "$BUILD_DIR"
+
+echo "done."
+echo "  headers: $DIST_DIR/include"
+echo "  libs:    $DIST_DIR/lib"
