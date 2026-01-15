@@ -1,6 +1,6 @@
 /**
  * @author Sean Hobeck
- * @date 2026-01-13
+ * @date 2026-01-14
  */
 #include <tapi/tapi.h>
 
@@ -26,7 +26,7 @@ tapi_setup(e_tapi_arch_t arch, const char* log_path) {
         architecture = arch;
     else {
 #ifdef __amd64__
-        architecture = E_TAPI_ARCH_AMD64;
+        architecture = E_TAPI_ARCH_X64;
 #endif
 #ifdef __i386__
         architecture = E_TAPI_ARCH_X86;
@@ -46,4 +46,10 @@ tapi_setup(e_tapi_arch_t arch, const char* log_path) {
     if (log_path != 0x0)
         logger_path = strdup(log_path);
     else logger_path = 0x0;
+}
+
+/** @return the architecture specified in tapi_setup. */
+e_tapi_arch_t
+tapi_get_arch(void) {
+    return architecture;
 }

@@ -1,6 +1,6 @@
 /**
  * @author Sean Hobeck
- * @date 2026-01-13
+ * @date 2026-01-14
  */
 #ifndef TAPI_H
 #define TAPI_H
@@ -36,7 +36,7 @@ typedef struct {
 typedef enum {
     E_TAPI_ARCH_NATIVE = 0x0, /* let tapi use your native architecture. */
     E_TAPI_ARCH_X86 = 0x1, /* 32-bit systems. */
-    E_TAPI_ARCH_AMD64, /* 64-bit systems. */
+    E_TAPI_ARCH_X64, /* 64-bit systems. */
     E_TAPI_ARCH_ARM, /* arm 32-bit systems. */
     E_TAPI_ARCH_ARM64, /* arm 64-bit systems. */
     E_TAPI_ARCH_RISCV, /* risc-v systems. */
@@ -51,4 +51,8 @@ typedef enum {
  */
 void
 tapi_setup(e_tapi_arch_t arch, const char* log_path);
+
+/** @return the architecture specified in tapi_setup. */
+e_tapi_arch_t
+tapi_get_arch(void);
 #endif /* TAPI_H */
