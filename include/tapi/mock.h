@@ -1,6 +1,6 @@
 /**
  * @author Sean Hobeck
- * @date 2026-01-14
+ * @date 2026-01-15
  */
 #ifndef TAPI_MOCK_H
 #define TAPI_MOCK_H
@@ -47,5 +47,4 @@ tapi_mock_apply(tapi_mock_t* mock);
  */
 void
 tapi_mock_destroy(tapi_mock_t* mock);
-
 #endif /* TAPI_MOCK_H */

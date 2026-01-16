@@ -24,7 +24,7 @@ internal size_t
 get_page_size() {
 #ifndef _WIN32
     long value = sysconf(_SC_PAGESIZE);
-    return value > 0 ? (size_t)value : 4096;
+    return value > 0 ? (size_t)value : 4096u;
 #else
     SYSTEM_INFO si{};
     GetSystemInfo(&si);
