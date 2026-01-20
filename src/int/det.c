@@ -1,6 +1,6 @@
 /**
  * @author Sean Hobeck
- * @date 2026-01-16
+ * @date 2026-01-20
  */
 #include "det.h"
 
@@ -14,6 +14,8 @@
 #include "guard.h"
 
 /*! @uses arch_t, get_arch. */
+#include <string.h>
+
 #include "arch.h"
 
 /**
@@ -96,4 +98,115 @@ det_function_size(void* address, size_t max_size) {
     cs_free(insn, 1);
     cs_close(&handle);
     return size;
+}
+
+/**
+ * @brief search through an instructions optional information to find if it is a call to an
+ *  immediate/ relative address within the memory; for x86|x86_64 architectures only.
+ *
+ * @param target the target address to search all calls for.
+ * @param call the call information structure to be used.
+ * @param insn the instruction to be searched.
+ * @param mode the mode of the architecture (x86 vs. x86_64).
+ * @return 1 if successful in finding the call to target, o.w. 0.
+ */
+internal size_t
+find_call_bx86(const void* target, det_call_t* call, const cs_insn* insn, const cs_mode mode) {
+    /* we look for the target address. */
+    uint64_t address = 0u;
+    cs_x86* ops = &insn->detail->x86;
+    for (size_t i = 0; i < ops->op_count; i++) {
+        /* iterate until we find the immediate value used in the call. */
+        cs_x86_op* op = &ops->operands[i];
+        if (op->type == X86_OP_IMM) {
+            if (mode == CS_MODE_64) {
+                /* relative call. */
+                if (op->imm <= UINT32_MAX && ops->disp == 0u) {
+                    address = insn->address + insn->size + op->imm;
+                    call->is_rel = true;
+                    call->orig_off = op->imm;
+                }
+                else if (op->size == 8u) {
+                    /* absolute call... */
+                    address = op->imm;
+                    call->is_rel = false;
+                }
+                /* we currently don't support rip-rel calls. */
+            }
+            else {
+                /* relative call. */
+                if (op->size == 4u) {
+                    address = insn->address + insn->size + op->imm;
+                    call->is_rel = true;
+                }
+                else {
+                    /* absolute call... */
+                    address = op->imm;
+                    call->is_rel = false;
+                }
+            }
+
+            /* check if it is our target. */
+            bool is_target = address == (uint64_t) target;
+            if (is_target) {
+                call->call = (void*) insn->address;
+                call->dest = (void*) target;
+                call->size = insn->size;
+                memcpy(call->bytes, insn->bytes, insn->size < 32u ? insn->size : 32u);
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+/**
+ * @brief ...
+ *
+ * @param source the source...
+ * @param target the destination..
+ * @return ...
+ */
+det_call_t*
+det_call_target(void* source, const void* target) {
+    /* open memory for the compile-time architecture. */
+    csh handle;
+    arch_t architecture = get_arch();
+    cs_open(architecture.arch, architecture.mode, &handle);
+    cs_option(handle, CS_OPT_DETAIL, CS_OPT_ON);
+
+    /* allocate the pointer. */
+    det_call_t* call = calloc(1, sizeof *call);
+
+    /* set up address and size for the iteration. */
+    const uint8_t* bytes = source;
+    uint64_t address = (uint64_t) source;
+    size_t size = det_function_size(source, 0x1000);
+    cs_insn* insn = cs_malloc(handle);
+    if (!insn) {
+        cs_close(&handle);
+        fprintf(stderr, "cs_malloc failed; could not allocate memory for instructions.");
+        return 0x0;
+    }
+
+    /* iterating. */
+    while (cs_disasm_iter(handle, &bytes, &size, &address, insn)) {
+        /* is this a call instruction. */
+        if (cs_insn_group(handle, insn, CS_GRP_CALL)) {
+            /* get the target address */
+            switch (architecture.arch) {
+                case (CS_ARCH_X86): {
+                    /* check if we can find the target in the insn. */
+                    if (find_call_bx86(target, call, insn, architecture.mode) == 1u) {
+                        return call;
+                    }
+                }
+                default: {
+                    fprintf(stderr, "unknown architecture; corrupted?");
+                    return 0x0;
+                }
+            }
+        }
+    }
+    return 0x0;
 }

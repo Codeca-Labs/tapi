@@ -1,12 +1,12 @@
 /**
  * @author Sean Hobeck
- * @date 2026-01-15
+ * @date 2026-01-19
  */
 #ifndef TAPI_H
 #define TAPI_H
 
 /*! @uses dyna_t. */
-#include <dyna.h>
+#include <tapi/dyna.h>
 
 /** enum for different types of results from a test. */
 typedef enum {
