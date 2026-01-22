@@ -1,6 +1,6 @@
 /**
  * @author Sean Hobeck
- * @date 2026-01-15
+ * @date 2026-01-21
  */
 #include "arch.h"
 
@@ -17,6 +17,6 @@ get_arch(void) {
     return (arch_t) { .arch = CS_ARCH_ARM, .mode = CS_MODE_ARM };
 #endif
 #ifdef __arm__
-    return (arch_t) { .arch = CS_ARCH_AARCH64, .mode = CS_MODE_ARM };
+    return (arch_t) { .arch = CS_ARCH_ARM64, .mode = CS_MODE_ARM };
 #endif
 };

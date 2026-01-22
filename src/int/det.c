@@ -1,21 +1,22 @@
 /**
  * @author Sean Hobeck
- * @date 2026-01-20
+ * @date 2026-01-21
  */
 #include "det.h"
 
 /*! @uses bool, true, false. */
 #include <stdbool.h>
 
+/*! @uses memcpy. */
+#include <string.h>
+
 /*! @uses cs_insn, csh, cs_open. */
 #include <capstone/capstone.h>
 
 /*! @uses internal. */
-#include "guard.h"
+#include "intt.h"
 
 /*! @uses arch_t, get_arch. */
-#include <string.h>
-
 #include "arch.h"
 
 /**
@@ -101,16 +102,16 @@ det_function_size(void* address, size_t max_size) {
 }
 
 /**
- * @brief search through an instructions optional information to find if it is a call to an
- *  immediate/ relative address within the memory; for x86|x86_64 architectures only.
+ * @brief search through an x86 instructions opt. info to find if it is a call to an
+ *  immediate/ relative address within the memory; for x86|x86_64 only.
  *
- * @param target the target address to search all calls for.
+ * @param target the target address to search within the instruction for.
  * @param call the call information structure to be used.
  * @param insn the instruction to be searched.
  * @param mode the mode of the architecture (x86 vs. x86_64).
- * @return 1 if successful in finding the call to target, o.w. 0.
+ * @return ref. to intt.h for enum.
  */
-internal size_t
+internal e_intt_result_t
 find_call_bx86(const void* target, det_call_t* call, const cs_insn* insn, const cs_mode mode) {
     /* we look for the target address. */
     uint64_t address = 0u;
@@ -124,7 +125,7 @@ find_call_bx86(const void* target, det_call_t* call, const cs_insn* insn, const 
                 if (op->imm <= UINT32_MAX && ops->disp == 0u) {
                     address = insn->address + insn->size + op->imm;
                     call->is_rel = true;
-                    call->orig_off = op->imm;
+                    call->orig_off = (int32_t) op->imm;
                 }
                 else if (op->size == 8u) {
                     /* absolute call... */
@@ -152,12 +153,125 @@ find_call_bx86(const void* target, det_call_t* call, const cs_insn* insn, const 
                 call->call = (void*) insn->address;
                 call->dest = (void*) target;
                 call->size = insn->size;
+
+                /* copy and return. */
                 memcpy(call->bytes, insn->bytes, insn->size < 32u ? insn->size : 32u);
-                return 1;
+                return E_INTT_RESULT_SUCCESS;
             }
         }
     }
-    return 0;
+    return E_INTT_RESULT_FAILURE;
+}
+
+/**
+ * @brief search through an arm instructions opt. info to find if it is a call to an immediate/
+ *  relative address within memory; for aarch32|thumb only.
+ *
+ * @param target the target address to search within the instruction for.
+ * @param call the call information structure to be used.
+ * @param insn the instruction to be searched.
+ * @return ref. to intt.h for enum.
+ */
+internal e_intt_result_t
+find_call_barm32(const void* target, det_call_t* call, const cs_insn* insn) {
+    bool branch_link = insn->id == ARM_INS_BL;
+    bool blx = insn->id == ARM_INS_BLX;
+    if (branch_link || blx) {
+        cs_arm* arm = &insn->detail->arm;
+
+        /* iterate through every operand. */
+        for (int i = 0; i < arm->op_count; i++) {
+            cs_arm_op* op = &arm->operands[i];
+            if (op->type == ARM_OP_IMM) {
+                uint64_t target_addr = (uint64_t)op->imm;
+                call->is_rel = true;
+
+                /* is it a branch with link insn? */
+                if (branch_link) {
+                    /* calculate original offset. */
+                    if (call->is_thumb) {
+                        /* thumb bl/blx; 2-instruction sequence
+                         *  bl encodes a 21-bit signed offset. */
+                        call->orig_off = (int32_t)(op->imm - (insn->address + 4));
+                    } else {
+                        /* arm bl; encodes 24-bit signed offset. */
+                        call->orig_off = (int32_t)(op->imm - (insn->address + 8));
+                    }
+                }
+
+                /* is this the target address? */
+                if ((void*)target_addr == target) {
+                    call->call = (void*)insn->address;
+                    call->dest = (void*)target_addr;
+                    call->size = insn->size;
+
+                    /* is this a blx interworking call? */
+                    if (blx) {
+                        call->orig_off = (int32_t)(op->imm - (insn->address + (call->is_thumb ?
+                            4u : 8u)));
+                    }
+
+                    /* copy bytes and return. */
+                    memcpy(call->bytes, (void*)insn->address,
+                           insn->size < 32u ? insn->size : 32u);
+                    return E_INTT_RESULT_SUCCESS;
+                }
+            }
+        }
+    }
+    return E_INTT_RESULT_FAILURE;
+}
+
+/**
+ * @brief search through an arm64 instructions opt. info to find if it is a call to an immediate/
+ *  relative address within memory; for aarch64 only.
+ *
+ * @param target the target address to search within the instruction for.
+ * @param call the call info structure to be used.
+ * @param insn the instruction to be searched.
+ * @return ref. to intt.h for enum.
+ */
+internal e_intt_result_t
+find_call_barm64(const void* target, det_call_t* call, const cs_insn* insn) {
+    /* is this a branch with link insn? */
+    if (insn->id == ARM64_INS_BL) {
+        cs_arm64* arm64 = &insn->detail->arm64;
+
+        /* iterate. */
+        for (int i = 0; i < arm64->op_count; i++) {
+            cs_arm64_op* op = &arm64->operands[i];
+
+            /* are we dealing with the immediate value? */
+            if (op->type == ARM64_OP_IMM) {
+                uint64_t target_addr = op->imm;
+
+                // ARM64 BL is always relative
+                // Encodes a 26-bit signed offset
+                call->is_rel = true;
+
+                /* calculate offset, target = pc + (imm << 2). */
+                call->orig_off = (int32_t)(target_addr - insn->address);
+
+                /* is this the target address? */
+                if ((void*)target_addr == target) {
+                    call->call = (void*)insn->address;
+                    call->dest = (void*)target_addr;
+                    call->size = insn->size;
+
+                    /* copy bytes and return. */
+                    memcpy(call->bytes, (void*)insn->address,
+                           insn->size < 32u ? insn->size : 32u);
+                    return E_INTT_RESULT_SUCCESS;
+                }
+            }
+        }
+    }
+    /* blr for indirect calls via register. */
+    if (insn->id == ARM64_INS_BLR) {
+        /* this is unsupported at the moment. */
+        return E_INTT_RESULT_FAILURE;
+    }
+    return E_INTT_RESULT_FAILURE;
 }
 
 /**
@@ -177,6 +291,9 @@ det_call_target(void* source, const void* target) {
 
     /* allocate the pointer. */
     det_call_t* call = calloc(1, sizeof *call);
+    if (call == 0x0) {
+        return 0x0;
+    }
 
     /* set up address and size for the iteration. */
     const uint8_t* bytes = source;
@@ -191,15 +308,23 @@ det_call_target(void* source, const void* target) {
 
     /* iterating. */
     while (cs_disasm_iter(handle, &bytes, &size, &address, insn)) {
-        /* is this a call instruction. */
+        /* is this a call instruction? */
         if (cs_insn_group(handle, insn, CS_GRP_CALL)) {
             /* get the target address */
             switch (architecture.arch) {
                 case (CS_ARCH_X86): {
                     /* check if we can find the target in the insn. */
-                    if (find_call_bx86(target, call, insn, architecture.mode) == 1u) {
+                    if e_intt_passed(find_call_bx86(target, call, insn, architecture.mode))
                         return call;
-                    }
+                }
+                /* same for both arm32 and arm64. */
+                case (CS_ARCH_ARM): {
+                    if e_intt_passed(find_call_barm32(target, call, insn))
+                        return call;
+                }
+                case (CS_ARCH_ARM64): {
+                    if e_intt_passed(find_call_barm64(target, call, insn))
+                        return call;
                 }
                 default: {
                     fprintf(stderr, "unknown architecture; corrupted?");
@@ -208,5 +333,9 @@ det_call_target(void* source, const void* target) {
             }
         }
     }
+
+    /* free & return. */
+    cs_free(insn, 1u);
+    cs_close(&handle);
     return 0x0;
 }

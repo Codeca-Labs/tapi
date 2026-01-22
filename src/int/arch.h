@@ -1,6 +1,6 @@
 /**
  * @author Sean Hobeck
- * @date 2026-01-15
+ * @date 2026-01-21
  */
 #ifndef ARCH_H
 #define ARCH_H
@@ -17,5 +17,4 @@ typedef struct {
 /** @return the current architecture pair for capstone, gen. at compile time. */
 arch_t
 get_arch(void);
-
 #endif /* ARCH_H */

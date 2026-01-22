@@ -1,12 +1,15 @@
 /**
  * @author Sean Hobeck
- * @date 2026-01-19
+ * @date 2026-01-21
  */
 #ifndef DET_H
 #define DET_H
 
 /*! @uses size_t. */
 #include <stddef.h>
+
+/*! @uses uint8_t. */
+#include <stdint.h>
 
 /*! @uses bool, true, false. */
 #include <stdbool.h>
@@ -27,11 +30,11 @@ det_function_size(void* address, size_t max_size);
  *  instruction, diverting addresses to stubs, which are then used by users in test_cases.
  */
 typedef struct {
-    void* call, *dest; /* pointer to both the call insn and dest. address. */
-    size_t size; /* ... */
-    unsigned char bytes[32u]; /* bytes used in the call (max 32). */
-    bool is_rel; /* is it relative? */
-    int offset, orig_off; /* ... */
+    void* call, *dest; /* pointer to both insn and dest. address. */
+    size_t size; /* instruction size. */
+    uint8_t bytes[32u]; /* bytes used in the call (max 32). */
+    bool is_rel, is_thumb; /* is it a relative address or in arm thumb mode? */
+    int32_t offset, orig_off; /* ... */
 } det_call_t;
 
 /**
