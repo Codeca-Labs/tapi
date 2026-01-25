@@ -8,9 +8,6 @@
 /*! @uses size_t. */
 #include <stddef.h>
 
-/* internal specifier. */
-#define internal static
-
 /** a data structure for a memory protection guard. */
 typedef struct {
     void* address; /* address in memory to be written to. */

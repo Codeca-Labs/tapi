@@ -1,40 +1,39 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/usr/bin/env sh
+set -eu
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DEPS_DIR="$ROOT_DIR/dependencies"
-CAPSTONE_DIR="$DEPS_DIR/capstone"
-BUILD_DIR="$CAPSTONE_DIR/build"
-DIST_DIR="$CAPSTONE_DIR/dist"
+PREFIX="${PREFIX:-/usr/local}"
 
-mkdir -p "$DEPS_DIR"
-
-if [[ ! -d "$CAPSTONE_DIR/.git" ]]; then
-  echo "cloning into $CAPSTONE_DIR ..."
-  git clone --depth 1 https://github.com/capstone-engine/capstone.git "$CAPSTONE_DIR"
-else
-  echo "already cloned capstone, updating..."
-  git -C "$CAPSTONE_DIR" pull --ff-only
+if command -v pkg-config >/dev/null 2>&1 && pkg-config --exists capstone; then
+  echo "capstone already installed: $(pkg-config --modversion capstone)"
+  exit 0
 fi
 
-echo "configuring build for capstone..."
-mkdir -p "$BUILD_DIR" "$DIST_DIR"
+tmpdir="$(mktemp -d)"
+trap 'rm -rf "$tmpdir"' EXIT
 
-cmake -S "$CAPSTONE_DIR" -B "$BUILD_DIR" \
-  -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
-  -DCAPSTONE_BUILD_SHARED=ON \
-  -DCAPSTONE_BUILD_STATIC=OFF \
-  -DCAPSTONE_BUILD_TESTS=OFF \
-  -DCAPSTONE_BUILD_CSTOOL=OFF \
-  -DCMAKE_INSTALL_PREFIX="$DIST_DIR"
+echo "cloning capstone..."
+git clone --depth 1 https://github.com/capstone-engine/capstone.git "$tmpdir/capstone"
 
 echo "building capstone..."
-cmake --build "$BUILD_DIR" --config Release
+make -C "$tmpdir/capstone"
 
-echo "installing to $DIST_DIR ..."
-cmake --install "$BUILD_DIR"
+echo "installing capstone to $PREFIX (requires sudo)..."
+sudo make -C "$tmpdir/capstone" install PREFIX="$PREFIX"
 
-echo "done."
-echo "  headers: $DIST_DIR/include"
-echo "  libs:    $DIST_DIR/lib"
+if command -v ldconfig >/dev/null 2>&1; then
+  sudo ldconfig
+fi
+
+echo "verifying pkg-config..."
+if command -v pkg-config >/dev/null 2>&1; then
+  if pkg-config --exists capstone; then
+    echo "ok: capstone version $(pkg-config --modversion capstone)"
+    echo "cflags: $(pkg-config --cflags capstone)"
+    echo "libs:   $(pkg-config --libs capstone)"
+  else
+    echo "warning: pkg-config can't find capstone.pc."
+    echo "if you installed to a non-standard prefix, set PKG_CONFIG_PATH accordingly."
+  fi
+else
+  echo "warning: pkg-config not installed; install it for easiest Makefile integration."
+fi

@@ -1,6 +1,6 @@
 /**
  * @author Sean Hobeck
- * @date 2026-01-14
+ * @date 2026-01-25
  */
 #ifndef TAPI_MOCK_H
 #define TAPI_MOCK_H
@@ -12,9 +12,9 @@
  * a data structure ...
  */
 typedef struct {
-    void* orig, *mocked, *stub; /* original, mocked, and stub/ trampoline functions. */
+    void* orig, *mocked, *target; /* original, mocked, and target functions. */
     void* call; /* address of the call in the original function. */
-    size_t size; /* size of the patch. */
+    size_t size, fun_size; /* size of the patch & function. */
     unsigned char orig_bytes[32u], mocked_bytes[32u];
     /* first 32 bytes of original and mocked functions */
 } tapi_mock_t;
@@ -41,11 +41,30 @@ void
 tapi_mock_apply(tapi_mock_t* mock);
 
 /**
- * @brief restore the contents of a function, and free the mock.
+ * @brief restore the contents of a function and free the mock.
  *
  * @param mock the mock structure to be freed and restored.
  */
 void
-tapi_mock_destroy(tapi_mock_t* mock);
+tapi_mock_restore(tapi_mock_t* mock);
 
+/* ... */
+#define tapi_mock_return(func_name, return_type, return_value) \
+    return_type func_name() { return return_value; }
+
+/* ... */
+#define tapi_mock_return_int(func_name, return_value) \
+    tapi_mock_return(func_name, int, return_value)
+
+/* ... */
+#define tapi_mock_return_ptr(func_name, return_value) \
+    tapi_mock_return(func_name, void*, return_value)
+
+/* ... */
+#define tapi_mock_return_null(func_name) \
+    tapi_mock_return(func_name, void*, null)
+
+/* ... */
+#define tapi_mock_return_strl(func_name, return_value) \
+    tapi_mock_return(func_name, char*, return_value)
 #endif /* TAPI_MOCK_H */

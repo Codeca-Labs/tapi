@@ -1,12 +1,12 @@
 /**
  * @author Sean Hobeck
- * @date 2026-01-14
+ * @date 2026-01-19
  */
 #ifndef TAPI_H
 #define TAPI_H
 
 /*! @uses dyna_t. */
-#include <dyna.h>
+#include <tapi/dyna.h>
 
 /** enum for different types of results from a test. */
 typedef enum {
@@ -32,27 +32,5 @@ typedef struct {
     dyna_t mocks; /* dynamic array of mock pointers. */
 } tapi_test_t;
 
-/** enum for different supported architectures. */
-typedef enum {
-    E_TAPI_ARCH_NATIVE = 0x0, /* let tapi use your native architecture. */
-    E_TAPI_ARCH_X86 = 0x1, /* 32-bit systems. */
-    E_TAPI_ARCH_X64, /* 64-bit systems. */
-    E_TAPI_ARCH_ARM, /* arm 32-bit systems. */
-    E_TAPI_ARCH_ARM64, /* arm 64-bit systems. */
-    E_TAPI_ARCH_RISCV, /* risc-v systems. */
-} e_tapi_arch_t;
 
-/**
- * @brief set up tapi to do runtime patches and testing with a log file as well as specific
- *  architecture.
- *
- * @param arch the architecture that is to be used in this test or 0x0 for native.
- * @param log_path the path to a .log file, or 0x0 if none.
- */
-void
-tapi_setup(e_tapi_arch_t arch, const char* log_path);
-
-/** @return the architecture specified in tapi_setup. */
-e_tapi_arch_t
-tapi_get_arch(void);
 #endif /* TAPI_H */

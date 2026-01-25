@@ -2,6 +2,7 @@ cc := gcc
 rm := rm -rf
 cp := cp
 mkdir := mkdir -p
+pkg_config := pkg-config
 
 cflags := -std=c17 -Wall -Wextra -g -O0 -fPIC
 
@@ -14,7 +15,6 @@ src_dir := src
 include_dir := include
 test_dir := test
 build_dir := build
-deps_dir := dependencies
 
 bin_dir := bin
 bin_inc_dir := $(bin_dir)/include
@@ -23,27 +23,22 @@ bin_pkg_dir := $(bin_dir)/lib/pkgconfig
 lib_name := tapi
 lib_file := $(bin_dir)/lib$(lib_name).so
 
-capstone_dir := $(deps_dir)/capstone
-capstone_dist := $(capstone_dir)/dist
-capstone_inc := $(capstone_dist)/include
-capstone_lib := $(capstone_dist)/lib
+capstone_cflags := $(shell $(pkg_config) --cflags capstone 2>/dev/null)
+capstone_libs   := $(shell $(pkg_config) --libs   capstone 2>/dev/null)
 
 have_capstone := 0
-ifneq ($(wildcard $(capstone_lib)/libcapstone.so*),)
+ifneq ($(strip $(capstone_libs)),)
   have_capstone := 1
 endif
 
-# include roots
-# this is the important bit for: #include <tapi/test.h>
 cflags += -I$(include_dir)
 
-# optional: keep your old auto-discovered include dirs
 includes := $(shell find $(include_dir) -type d 2>/dev/null)
 includes += $(shell find $(src_dir) -type d 2>/dev/null)
 cflags += $(addprefix -I,$(includes))
 
 ifeq ($(have_capstone),1)
-  cflags += -I$(capstone_inc)
+  cflags += $(capstone_cflags)
 endif
 
 srcs := $(shell find $(src_dir) -name '*.c')
@@ -53,19 +48,11 @@ ldflags := -shared -Wl,-rpath,'$$ORIGIN'
 ldlibs :=
 
 ifeq ($(have_capstone),1)
-  ldflags += -L$(capstone_lib)
-  ldlibs += -lcapstone
+  ldlibs += $(capstone_libs)
 endif
 
 project_headers := $(shell find $(include_dir) -name '*.h')
 project_headers_dst := $(patsubst $(include_dir)/%,$(bin_inc_dir)/%,$(project_headers))
-
-ifeq ($(have_capstone),1)
-  capstone_headers := $(shell find $(capstone_inc) -name '*.h')
-  capstone_headers_dst := $(patsubst $(capstone_inc)/%,$(bin_inc_dir)/%,$(capstone_headers))
-else
-  capstone_headers_dst :=
-endif
 
 pc_file := $(bin_pkg_dir)/$(lib_name).pc
 
@@ -78,20 +65,20 @@ destdir ?=
 test_srcs := $(shell find $(test_dir) -maxdepth 1 -name '*.c' 2>/dev/null)
 test_bins := $(patsubst $(test_dir)/%.c,$(bin_dir)/test_%,$(test_srcs))
 
-# tests include from bin/include so they exercise the staged public api
 test_cflags := -std=c17 -Wall -Wextra -g -O0 -I$(bin_inc_dir)
 test_ldflags := -L$(bin_dir) -Wl,-rpath,'$$ORIGIN'
 test_ldlibs := -l$(lib_name)
 
 .PHONY: all
-all: deps stage_headers stage_deps $(pc_file) $(lib_file)
+all: deps stage_headers $(pc_file) $(lib_file)
 
 .PHONY: deps
 deps:
 ifeq ($(have_capstone),1)
 	@true
 else
-	@echo "capstone not found. run ./get-deps.sh"
+	@echo "capstone not found (install libcapstone-dev / capstone-devel)"
+	@exit 1
 endif
 
 $(build_dir)/%.o: $(src_dir)/%.c
@@ -103,24 +90,11 @@ $(lib_file): $(objs)
 	$(cc) $(cflags) $(ldflags) $^ -o $@ $(ldlibs)
 
 .PHONY: stage_headers
-stage_headers: $(project_headers_dst) $(capstone_headers_dst)
+stage_headers: $(project_headers_dst)
 
-# project headers -> bin/include (preserves include/tapi/... as bin/include/tapi/...)
 $(bin_inc_dir)/%: $(include_dir)/%
 	@$(mkdir) $(dir $@)
 	$(cp) $< $@
-
-# capstone headers -> bin/include (preserves capstone/... as bin/include/capstone/...)
-$(bin_inc_dir)/%: $(capstone_inc)/%
-	@$(mkdir) $(dir $@)
-	$(cp) $< $@
-
-.PHONY: stage_deps
-stage_deps:
-ifeq ($(have_capstone),1)
-	@$(mkdir) $(bin_dir)
-	@$(cp) -u $(capstone_lib)/libcapstone.so* $(bin_dir) 2>/dev/null || true
-endif
 
 $(pc_file): $(lib_file)
 	@$(mkdir) $(bin_pkg_dir)
@@ -137,7 +111,7 @@ $(pc_file): $(lib_file)
 .PHONY: test
 test: all $(test_bins)
 
-$(bin_dir)/test_%: $(test_dir)/%.c $(lib_file) stage_headers stage_deps
+$(bin_dir)/test_%: $(test_dir)/%.c $(lib_file) stage_headers
 	@$(mkdir) $(dir $@)
 	$(cc) $(test_cflags) $< -o $@ $(test_ldflags) $(test_ldlibs)
 
