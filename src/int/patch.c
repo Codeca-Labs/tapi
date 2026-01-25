@@ -1,14 +1,225 @@
 /**
  * @author Sean Hobeck
- * @date 2026-01-21
+ * @date 2026-01-25
  */
 #include "patch.h"
 
 /*! @uses fprintf, stderr. */
 #include <stdio.h>
 
+/*! @uses arch_t, get_arch. */
+#include "arch.h"
+
 /*! @uses guard_create, guard_close. */
 #include "guard.h"
+
+/*! @uses internal. */
+#include "intt.h"
+
+/**
+ * @brief flush the instruction cache to allow our patched instructions to be read properly.
+ *
+ * @param address the address in memory to start from.
+ * @param size the size of instructions to clear the cache for.
+ */
+internal void
+flush_insn_cache(void* address, size_t size) {
+#ifdef _WIN32
+    FlushInstructionCache(GetCurrentProcess(), address, size);
+#else
+    __builtin___clear_cache(address, address + size);
+#endif
+}
+
+/**
+ * @brief patch a relative call on x86 architectures (assuming it is an 0xe8 call).
+ *
+ * @param call the pointer to the call insn. within a function.
+ * @param size the size of the insn.
+ * @param new_target the pointer to the new call target.
+ * @return ref. to intt.h for enum.
+ */
+internal e_intt_result_t
+patch_relative_bx86(void* call, const size_t size, const void* new_target) {
+    /* get the given byte code. */
+    uint8_t* code = call;
+
+    /* x64 rel. call is always 5 bytes. */
+    if (size < 5u) {
+        fprintf(stderr, "bx86; instruction too small (%zu bytes).\n", size);
+        return E_INTT_RESULT_FAILURE;
+    }
+
+    /* verify its actually an e8 rel. call */
+    if (code[0] != 0xe8) {
+        fprintf(stderr, "bx86; not a rel. call (0x%02x).\n", code[0]);
+        return E_INTT_RESULT_FAILURE;
+    }
+
+    /* calculate new offset. */
+    int64_t offset64 = (int64_t)new_target - ((int64_t)call + 5u);
+
+    /* check if the offset is 32-bit signed. */
+    if (offset64 > INT32_MAX || offset64 < INT32_MIN) {
+        fprintf(stderr, "bx64; new target out of range (>2gb).\n");
+        return E_INTT_RESULT_FAILURE;
+    }
+    int32_t offset = (int32_t)offset64;
+
+    /* write to e8 ?? ?? ?? ??, and return. */
+    *(int32_t*)(code + 1u) = offset;
+    return E_INTT_RESULT_SUCCESS;
+}
+
+/**
+ * @brief patch a relative call on aarch32 architecture.
+ *
+ * @param call the pointer to the call insn. within a function.
+ * @param size the size of the insn.
+ * @param new_target the pointer to the new call target.
+ * @return ref. to intt.h for enum.
+ */
+internal e_intt_result_t
+patch_relative_barm(void* call, const size_t size, const void* new_target) {
+    /* we only expect 4 bytes. */
+    if (size != 4) {
+        printf("barm32; expected 4-byte insn., got %zu bytes.\n", size);
+        return E_INTT_RESULT_FAILURE;
+    }
+
+    /* check if its a bl instruction (opcode bits 31-24 = 0xeb). */
+    uint32_t* insn = call;
+    if ((*insn & 0xff000000) != 0xeb000000) {
+        printf("barm32; not a bl insn. (0x%08x).\n", *insn);
+        return E_INTT_RESULT_FAILURE;
+    }
+
+    /* offset calc. = (target - (pc + 8)) >> 2 (we do the shifting later). */
+    uintptr_t pc = (uintptr_t)call;
+    uintptr_t target = (uintptr_t)new_target;
+    int32_t offset = (int32_t)(target - (pc + 8u));
+
+    /* check 24-bit signed range (+32mb). */
+    if (offset > 0x7fffff || offset < -0x800000) {
+        printf("barm32; target out of range (+32mb).\n");
+        return E_INTT_RESULT_FAILURE;
+    }
+
+    /* shift right by 2 (4-byte aligned). */
+    offset = offset >> 2;
+
+    /* construct new insn; preserve the top 8 bits, set new offset. */
+    uint32_t new_insn = *insn & 0xff000000 | (offset & 0x00ffffff);
+
+    /* write the entire 4-byte insn. */
+    *insn = new_insn;
+    return E_INTT_RESULT_SUCCESS;
+}
+
+/**
+ * @brief patch a relative call on arm thumb architecture.
+ *
+ * @param call the pointer to the call insn. within a function.
+ * @param size the size of the insn.
+ * @param new_target the pointer to the new call target.
+ * @return ref. to intt.h for enum.
+ */
+internal e_intt_result_t
+patch_relative_barmth(void* call, const size_t size, const void* new_target) {
+    /* we only expect 4 bytes. */
+    if (size != 4u) {
+        fprintf(stderr, "barmth; expected 4-byte insn., got %zu bytes.\n", size);
+        return E_INTT_RESULT_FAILURE;
+    }
+
+    /* check if its a bl insn (first half = 0xf). */
+    uint16_t* insn = call;
+    if ((insn[0] & 0xf800) != 0xf000) {
+        fprintf(stderr, "barmth; not a bl insn. (0x%04x)\n", insn[0]);
+        return E_INTT_RESULT_FAILURE;
+    }
+
+    /* offset calc. = (target - (pc + 4)) >> 1 */
+    uintptr_t pc = (uintptr_t)call;
+    uintptr_t target = (uintptr_t)new_target;
+    int32_t offset = (int32_t)(target - (pc + 4u));
+
+    /* check 21-bit signed range (+16mb). */
+    if (offset > 0xfffff || offset < -0x100000) {
+        printf("barmth; target out of range (+16mb).\n");
+        return E_INTT_RESULT_FAILURE;
+    }
+
+    /* convert to halfword offset. */
+    offset = offset >> 1u;
+
+    /* extract and rebuild the offset fields. */
+    uint32_t signb = offset >> 24u & 0x1;
+    uint32_t i1 = ~(offset >> 23u) & 0x1;
+    uint32_t i2 = ~(offset >> 22u) & 0x1;
+    uint32_t imm10 = offset >> 12u & 0x3ff;
+    uint32_t imm11 = offset & 0x7ff;
+
+    /* recalculate j1 and j2. */
+    uint32_t j1 = ~(i1 ^ signb) & 0x1;
+    uint32_t j2 = ~(i2 ^ signb) & 0x1;
+
+    /* reconstruct instruction halves, first = 11110S imm10. */
+    uint16_t new_first = 0xf000 | signb << 10u & 0x0400 | imm10;
+
+    /* second = 11j1j2 01111 imm11. */
+    uint16_t new_second = 0xf800 | j1 << 13u & 0x2000 | j2 << 11 & 0x0800 | imm11;
+
+    /* write back the exact same 4 bytes. */
+    insn[0] = new_first;
+    insn[1] = new_second;
+    return E_INTT_RESULT_SUCCESS;
+}
+
+/**
+ * @brief patch a relative call on a 64-bit arm architecture.
+ *
+ * @param call the pointer to the call insn. within a function.
+ * @param size the size of the insn.
+ * @param new_target the pointer to the new call target.
+ * @return ref. to intt.h for enum.
+ */
+internal e_intt_result_t
+patch_relative_barm64(void* call, const size_t size, const void* new_target) {
+    /* we only expect 4 bytes. */
+    if (size != 4u) {
+        fprintf(stderr, "barm64; expected 4-byte insn., got %zu bytes.\n", size);
+        return E_INTT_RESULT_FAILURE;
+    }
+    uint32_t* instr = call;
+
+    /* check if its a bl instruction (opcode bits 31-26 = 0x25). */
+    if ((*instr & 0xfc000000) != 0x94000000) {
+        fprintf(stderr, "barm64; not a bl insn. (0x%08x).\n", *instr);
+        return E_INTT_RESULT_FAILURE;
+    }
+
+    /* offset calc = (target - pc) >> 2. */
+    uint64_t pc = (uint64_t)call;
+    uint64_t target = (uint64_t)new_target;
+    int64_t offset64 = (int64_t)(target - pc);
+
+    /* check 26-bit signed range (+128mb). */
+    if (offset64 > 0x3ffffff || offset64 < -0x4000000) {
+        fprintf(stderr, "barm64; target out of range (+128mb)\n");
+        return E_INTT_RESULT_FAILURE;
+    }
+
+    /* shift right by 2. */
+    int32_t offset = (int32_t)(offset64 >> 2u);
+
+    /* construct new insn; preserve top 6 bits, set new offset. */
+    uint32_t new_instr = *instr & 0xfc000000 | offset & 0x03ffffff;
+
+    /* write the entire 4-byte ins. */
+    *instr = new_instr;
+    return E_INTT_RESULT_SUCCESS;
+}
 
 /**
  * @brief binary patch a call to a target using
@@ -19,26 +230,46 @@
  */
 int32_t
 patch_call_target(det_call_t* call, void* new_target) {
-    /* create a protect guard for an entire page. */
+    /* create a write-protect guard for an entire page. */
     guard_t* guard = guard_create(call->call, call->size);
     if (call->is_rel) {
-        int32_t new_rel_addr =  (int32_t)((uintptr_t)new_target - (uintptr_t)(call->call +
-            call->size));
-
-        /* verify new offset. */
-        if (new_rel_addr > INT32_MAX || new_rel_addr < INT32_MIN) {
-            fprintf(stderr, "new target address is too far for rel. call!");
-            return 0u;
-        }
-
         /* patch for a specific backend. */
+        arch_t architecture = get_arch();
+        switch (architecture.arch) {
+            case CS_ARCH_X86: {
+                if e_intt_passed(patch_relative_bx86(call->call, call->size, new_target)) {
+                    break;
+                }
+            }
+            case CS_ARCH_ARM: {
+                /* arm thumb? */
+                if (architecture.mode == CS_MODE_THUMB) {
+                    if e_intt_passed(patch_relative_barmth(call->call, call->size, new_target)) {
+                        break;
+                    }
+                }
+                else if e_intt_passed(patch_relative_barm(call->call, call->size, new_target)) {
+                    break;
+                }
+            }
+            case CS_ARCH_ARM64: {
+                if e_intt_passed(patch_relative_barm64(call->call, call->size, new_target)) {
+                    break;
+                }
+            }
+            default: {
+                fprintf(stderr, "unknown architecture; corrupted?");
+                return 0u;
+            };
+        }
     } else {
         fprintf(stderr, "cannot patch a non-relative call!\n");
+        guard_close(guard);
         return 0u;
     }
 
     /* close the guard and flush insn. cache. */
     guard_close(guard);
-    __builtin___clear_cache(call->call, call->call + call->size);
+    flush_insn_cache(call->call, call->size);
     return 1u;
 }

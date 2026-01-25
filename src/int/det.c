@@ -1,6 +1,6 @@
 /**
  * @author Sean Hobeck
- * @date 2026-01-21
+ * @date 2026-01-25
  */
 #include "det.h"
 
@@ -128,9 +128,9 @@ find_call_bx86(const void* target, det_call_t* call, const cs_insn* insn, const 
                     call->orig_off = (int32_t) op->imm;
                 }
                 else if (op->size == 8u) {
-                    /* absolute call... */
+                    /* absolute call, funny enough, we can still modify these. */
                     address = op->imm;
-                    call->is_rel = false;
+                    call->is_rel = true;
                 }
                 /* we currently don't support rip-rel calls. */
             }
@@ -292,6 +292,7 @@ det_call_target(void* source, const void* target) {
     /* allocate the pointer. */
     det_call_t* call = calloc(1, sizeof *call);
     if (call == 0x0) {
+        fprintf(stderr, "calloc failed; could not allocate memory for det_call_t*.\n");
         return 0x0;
     }
 
@@ -302,7 +303,7 @@ det_call_target(void* source, const void* target) {
     cs_insn* insn = cs_malloc(handle);
     if (!insn) {
         cs_close(&handle);
-        fprintf(stderr, "cs_malloc failed; could not allocate memory for instructions.");
+        fprintf(stderr, "cs_malloc failed; could not allocate memory for instructions.\n");
         return 0x0;
     }
 
@@ -314,22 +315,29 @@ det_call_target(void* source, const void* target) {
             switch (architecture.arch) {
                 case (CS_ARCH_X86): {
                     /* check if we can find the target in the insn. */
-                    if e_intt_passed(find_call_bx86(target, call, insn, architecture.mode))
+                    if e_intt_passed(find_call_bx86(target, call, insn, architecture.mode)) {
+                        cs_free(insn, 1u);
+                        cs_close(&handle);
                         return call;
+                    }
                 }
                 /* same for both arm32 and arm64. */
                 case (CS_ARCH_ARM): {
-                    if e_intt_passed(find_call_barm32(target, call, insn))
+                    /* this is really aarch32 + thumb. */
+                    if e_intt_passed(find_call_barm32(target, call, insn)) {
+                        cs_free(insn, 1u);
+                        cs_close(&handle);
                         return call;
+                    }
                 }
                 case (CS_ARCH_ARM64): {
-                    if e_intt_passed(find_call_barm64(target, call, insn))
+                    if e_intt_passed(find_call_barm64(target, call, insn)) {
+                        cs_free(insn, 1u);
+                        cs_close(&handle);
                         return call;
+                    }
                 }
-                default: {
-                    fprintf(stderr, "unknown architecture; corrupted?");
-                    return 0x0;
-                }
+                default: break;
             }
         }
     }

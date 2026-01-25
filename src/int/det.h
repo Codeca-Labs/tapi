@@ -1,6 +1,6 @@
 /**
  * @author Sean Hobeck
- * @date 2026-01-21
+ * @date 2026-01-25
  */
 #ifndef DET_H
 #define DET_H
@@ -33,7 +33,7 @@ typedef struct {
     void* call, *dest; /* pointer to both insn and dest. address. */
     size_t size; /* instruction size. */
     uint8_t bytes[32u]; /* bytes used in the call (max 32). */
-    bool is_rel, is_thumb; /* is it a relative address or in arm thumb mode? */
+    bool is_rel, is_thumb; /* is it a relative address?, are we arm thumb mode? */
     int32_t offset, orig_off; /* ... */
 } det_call_t;
 

@@ -1,6 +1,6 @@
 /**
  * @author Sean Hobeck
- * @date 2026-01-13
+ * @date 2026-01-25
  */
 #include <tapi/dyna.h>
 
@@ -21,10 +21,10 @@
 dyna_t*
 dyna_create() {
     /* allocate the array and set all data to be 0, except for isize. */
-    dyna_t* array = calloc(1, sizeof *array);
+    dyna_t* array = calloc(1u, sizeof *array);
     array->data = 0x0;
-    array->length = 0;
-    array->capacity = 0;
+    array->length = 0u;
+    array->capacity = 0u;
     return array;
 }
 
@@ -56,7 +56,7 @@ dyna_push(dyna_t* array, void* data) {
 
     /* compare length and capacity. */
     if (array->length == array->capacity) {
-        size_t _capacity = array->capacity == 0 ? 16 : array->capacity * 2;
+        size_t _capacity = array->capacity == 0u ? 16u : array->capacity * 2u;
         void** _data = realloc(array->data, sizeof(void*) * _capacity);
         if (!_data) {
             fprintf(stderr, "realloc failed; could not allocate memory for push.");
@@ -89,8 +89,8 @@ dyna_pop(dyna_t* array, size_t index) {
     void* item = array->data[index];
 
     /* free, shift down and then decrement length. */
-    for (size_t i = index + 1; i < array->length; i++)
-        array->data[i - 1] = array->data[i];
+    for (size_t i = index + 1u; i < array->length; i++)
+        array->data[i - 1u] = array->data[i];
     array->length--;
     return item;
 }
