@@ -4,14 +4,17 @@
  */
 #include <tapi/dyna.h>
 
+/*! @uses assert. */
+#include <assert.h>
+
 /*! @uses fprintf. */
 #include <stdio.h>
 
 /*! @uses calloc, realloc, free, exit. */
 #include <stdlib.h>
 
-/*! @uses assert. */
-#include <assert.h>
+/*! @uses memcpy. */
+#include <string.h>
 
 /**
  * @brief create a dyna_t structure with a set item size.
@@ -20,7 +23,7 @@
  */
 dyna_t*
 dyna_create() {
-    /* allocate the array and set all data to be 0, except for isize. */
+    /* allocate the array and set all data to be 0. */
     dyna_t* array = calloc(1u, sizeof *array);
     array->data = 0x0;
     array->length = 0u;
@@ -132,4 +135,24 @@ dyna_shrink(dyna_t* array) {
     }
     array->data = _data;
     array->capacity = array->length;
+}
+
+/**
+ * @brief make a new dynamic array given an array of data.
+ *
+ * @param data the list of data to be copied into a dynamic array.
+ * @param length the length of the list of data.
+ * @return an allocated dyna_t structure with all data copied over.
+ */
+dyna_t*
+dyna_make(void** data, size_t length) {
+    /* allocate the array and set all data to be 0. */
+    dyna_t* array = calloc(1u, sizeof *array);
+    array->data = calloc(length, sizeof(void*));
+    array->length = length;
+    array->capacity = length;
+
+    /* copy and return. */
+    memcpy(array->data, data, length);
+    return array;
 }

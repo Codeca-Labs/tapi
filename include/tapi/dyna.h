@@ -1,6 +1,6 @@
 /**
  *	@author Sean Hobeck
- *	@date 2026-01-13
+ *	@date 2026-01-25
  */
 #ifndef TAPI_DYNA_H
 #define TAPI_DYNA_H
@@ -73,6 +73,16 @@ dyna_get(dyna_t* array, size_t index);
  */
 void
 dyna_shrink(dyna_t* array);
+
+/**
+ * @brief make a new dynamic array given an array of data.
+ *
+ * @param data the list of data to be copied into a dynamic array.
+ * @param length the length of the list of data.
+ * @return an allocated dyna_t structure with all data copied over.
+ */
+dyna_t*
+dyna_make(void** data, size_t length);
 
 /* a get operation. */
 #define _get(array, type, index) ((type) dyna_get(array, index))

@@ -57,3 +57,4 @@ dkms.conf
 # build object(s)
 /bin
 /build
+/test/.idea
