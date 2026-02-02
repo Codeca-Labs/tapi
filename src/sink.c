@@ -1,5 +1,5 @@
 /**
-* @author Sean Hobeck
+ * @author Sean Hobeck
  * @date 2026-02-02
  */
 #include <tapi/sink.h>

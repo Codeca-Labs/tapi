@@ -1,5 +1,5 @@
 /**
-* @author Sean Hobeck
+ * @author Sean Hobeck
  * @date 2026-02-02
  */
 #ifndef TAPI_SINK_H

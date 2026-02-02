@@ -9,6 +9,7 @@
 
 /*! @uses pipe, dup, dup2. */
 #include <unistd.h>
+
 /*! @uses errno. */
 #include <errno.h>
 
