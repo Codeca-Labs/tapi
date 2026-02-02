@@ -1,4 +1,4 @@
-cc := gcc # small change
+cc := gcc
 rm := rm -rf
 cp := cp
 mkdir := mkdir -p
