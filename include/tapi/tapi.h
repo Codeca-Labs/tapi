@@ -18,7 +18,7 @@ typedef enum {
 /* a function pointer type for test functions. */
 typedef e_tapi_test_result_t (*tapi_test_func_t)(void);
 
-/* a general function pointer type for setup and teardown functions. */
+/* a function pointer type for setup and teardown functions. */
 typedef void (*tapi_gen_func_t)(void);
 
 /**
@@ -73,6 +73,15 @@ tapi_make_test(const char* name, tapi_test_func_t function);
  */
 void
 tapi_add_mock_to_test(tapi_test_t* test, void* tested, void* target, void* mocked);
+
+/**
+ * @brief free and destroy a list of tests after they have been ran.
+ *
+ * @param tests the tests to be freed (this also frees all of its elements, including mocks).
+ * @param length the number of tests to be freed.
+ */
+void
+tapi_destroy_tests(tapi_test_t** tests, size_t length);
 
 /* ... */
 #define tapi_assert(cond) if (!(cond)) return E_TAPI_TEST_RESULT_FAILED;

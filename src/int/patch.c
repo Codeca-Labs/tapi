@@ -278,11 +278,13 @@ patch_call_target(det_call_t* call, void* new_target) {
         /* NOLINTNEXTLINE */
         fprintf(stderr, "cannot patch a non-relative call!\n");
         guard_close(guard);
+        free(guard);
         return 0u;
     }
 
     /* close the guard and flush insn. cache. */
     guard_close(guard);
+    free(guard);
     flush_insn_cache(call->call, call->size);
     return 1u;
 }

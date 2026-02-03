@@ -120,3 +120,19 @@ tapi_add_mock_to_test(tapi_test_t* test, void* tested, void* target, void* mocke
     tapi_mock_t* mock = tapi_mock_create(tested, target, mocked);
     dyna_push(test->mocks, mock);
 }
+
+/**
+ * @brief free and destroy a list of tests after they have been ran.
+ *
+ * @param tests the tests to be freed (this also frees all of its elements, including mocks).
+ * @param length the number of tests to be freed.
+ */
+void
+tapi_destroy_tests(tapi_test_t** tests, size_t length) {
+    /* free each test but not the list itself, that isn't ours. */
+    for (size_t i = 0; i < length; i++) {
+        dyna_free(tests[i]->mocks);
+        free(tests[i]->name);
+        free(tests[i]);
+    }
+};
