@@ -43,5 +43,14 @@ tapi_end_capture(tapi_capture_t* capture);
 void
 tapi_destroy_capture(tapi_capture_t* capture);
 
-#define tapi_quick_capture_to_buffer()
+/* quickly make a capture and sink for a set stream. */
+#define tapi_quick_capture(stream) \
+    char buffer[4096u]; \
+    tapi_sink_t* sink = tapi_make_sink(); \
+    tapi_sink_setdbf(sink, buffer, 4096u); \
+    tapi_capture_t* capture = tapi_make_capture(sink, stream);
+
+/* use with tapi_quick_capture to make your tests more readable. */
+#define tapi_quick_end_capture() \
+    tapi_end_capture(capture);
 #endif /* TAPI_CAPTURE_H */

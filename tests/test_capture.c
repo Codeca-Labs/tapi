@@ -11,17 +11,12 @@ void function(float percentage) {
 }
 
 e_tapi_test_result_t test_function() {
-    /* arrange. */
-    tapi_sink_t* sink = tapi_sink_make();
-    char buffer[4096u];
-    tapi_sink_setdbf(sink, buffer, sizeof(buffer));
-    tapi_capture_t* capture = tapi_capture_make(sink, stdout);
-
-    /* act. */
+    /* arrange & act. */
+    tapi_quick_capture(stdout);
     function(0.1f);
 
     /* assert. */
-    tapi_capture_end(capture);
+    tapi_quick_end_capture();
     tapi_assert(strcmp(sink->buffer.data, "1.60"));
     return E_TAPI_TEST_RESULT_PASSED;
 }
