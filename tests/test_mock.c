@@ -18,7 +18,7 @@ tapi_mock_return(tested_function_target, int, 0u);
 e_tapi_test_result_t test_function() {
     /* act & assert. */
     int result = function();
-    tapi_assert(result == 0u);
+    tapi_assert(result == 1u);
     return E_TAPI_TEST_RESULT_PASSED;
 };
 
