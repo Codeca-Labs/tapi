@@ -5,17 +5,22 @@
 #ifndef TAPI_SINK_H
 #define TAPI_SINK_H
 
-/* we have to define this to use fileno as stream->_fileno is not universal across different libc. */
+/* we have to define this to use fileno(), as stream->_fileno is not universal across differing libc. */
 #define _POSIX_C_SOURCE 200809L
 
-/*! @uses FILE. */
+/*! @uses TAPI_EXPORT. */
+#include <tapi/tapi.h>
+
+/*! @uses FILE, struct _IO_FILE. */
 #include <stdio.h>
 
-/* for clarity. */
+/* a type definition for a POSIX compliant pointer to a memory/ file stream. */
 typedef FILE* tapi_stream_t;
 
 /**
- * a data structure ...
+ * a data structure responsible for transporting captured data from a specified stream into
+ *  another pre-allocated user stream. sinks are used in two types, log file streams (think
+ *  something along the lines of output_test_####.log, and memory streams like buffers.
  */
 typedef struct {
     struct {
@@ -35,7 +40,7 @@ typedef struct {
  *
  * @return a pointer to an allocated sink.
  */
-tapi_sink_t*
+TAPI_EXPORT tapi_sink_t*
 tapi_make_sink();
 
 /**
@@ -45,7 +50,7 @@ tapi_make_sink();
  * @param buffer the pre-allocated buffer to be used in the sink.
  * @param length the size of the pre-allocated buffer.
  */
-void
+TAPI_EXPORT void
 tapi_sink_setdbf(tapi_sink_t* sink, char* buffer, size_t length);
 
 /**
@@ -54,7 +59,7 @@ tapi_sink_setdbf(tapi_sink_t* sink, char* buffer, size_t length);
  * @param sink the sink to set the destination to.
  * @param stream the pre-allocated or opened stream.
  */
-void
+TAPI_EXPORT void
 tapi_sink_setdfp(tapi_sink_t* sink, tapi_stream_t stream);
 
 /**
@@ -62,6 +67,6 @@ tapi_sink_setdfp(tapi_sink_t* sink, tapi_stream_t stream);
  *
  * @param sink the sink to be freed.
  */
-void
+TAPI_EXPORT void
 tapi_destroy_sink(tapi_sink_t* sink);
 #endif /* TAPI_SINK_H */

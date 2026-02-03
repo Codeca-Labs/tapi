@@ -1,6 +1,6 @@
 /**
- *	@author Sean Hobeck
- *	@date 2026-01-25
+ * @author Sean Hobeck
+ * @date 2026-02-02
  */
 #ifndef TAPI_DYNA_H
 #define TAPI_DYNA_H
@@ -10,7 +10,7 @@
 
 /**
  * a data structure for a dynamically allocated array, it can hold only a set item size, as well
- *  as anything less; although it can hold items less than the size of a pointer.
+ *  as anything less; can hold items less than the size of a pointer, but you should use the latter.
  */
 typedef struct {
     void** data; /* array of data. */

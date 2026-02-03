@@ -1,6 +1,6 @@
 /**
  * @author Sean Hobeck
- * @date 2026-02-02
+ * @date 2026-02-03
  */
 #include <tapi/capture.h>
 
@@ -16,7 +16,7 @@
 /**
  * @brief start capturing data written to a specific stream and re-route to a specified sink.
  *
- * @param sink the sink to capture the re-routed data (see @ref<tapi/sink.h>["tapi_sink_t"].
+ * @param sink the sink to capture the re-routed data (see @ref<tapi/sink.h>).
  * @param stream the stream to re-route data from.
  * @return a pointer to an allocated capture structure.
  */
