@@ -1,6 +1,6 @@
 /**
  * @author Sean Hobeck
- * @date 2026-01-26
+ * @date 2026-02-02
  */
 #include <tapi/tapi.h>
 
@@ -29,6 +29,7 @@ void
 tapi_setup_tests(tapi_test_t** tests, size_t count) {
     /* if we already have tests. */
     if (l_tests != 0x0) {
+        /* NOLINTNEXTLINE */
         fprintf(stderr, "tests != null; refer to tapi_add_test().\n");
         return;
     }
@@ -91,10 +92,11 @@ tapi_run_tests(void) {
 tapi_test_t*
 tapi_make_test(const char* name, tapi_test_func_t function) {
     /* allocate and make the structure. */
-    tapi_test_t* test = calloc(1u, sizeof *test);
+    tapi_test_t* test = calloc(2, sizeof *test);
     size_t length = strlen(name);
     test->name = calloc(1u, length);
-    memcpy(test->name, name, length);
+    /* NOLINTNEXTLINE */
+    strncpy(test->name, name, length);
     test->mocks = dyna_create();
     test->function = function;
     return test;

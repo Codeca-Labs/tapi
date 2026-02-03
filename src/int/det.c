@@ -1,6 +1,6 @@
 /**
  * @author Sean Hobeck
- * @date 2026-01-25
+ * @date 2026-02-02
  */
 #include "det.h"
 
@@ -73,6 +73,7 @@ det_function_size(void* address, size_t max_size) {
     cs_insn* insn = cs_malloc(handle);
     if (!insn) {
         cs_close(&handle);
+        /* NOLINTNEXTLINE */
         fprintf(stderr, "cs_malloc failed; could not allocate memory for instructions.");
         return 0;
     }
@@ -90,6 +91,7 @@ det_function_size(void* address, size_t max_size) {
 
         /* sanity bounds. */
         if (size >= max_size) {
+            /* NOLINTNEXTLINE */
             fprintf(stderr, "warning; hit max search size of %zu bytes\n", max_size);
             break;
         }
@@ -155,6 +157,7 @@ find_call_bx86(const void* target, det_call_t* call, const cs_insn* insn, const 
                 call->size = insn->size;
 
                 /* copy and return. */
+                /* NOLINTNEXTLINE */
                 memcpy(call->bytes, insn->bytes, insn->size < 32u ? insn->size : 32u);
                 return E_INTT_RESULT_SUCCESS;
             }
@@ -212,6 +215,7 @@ find_call_barm32(const void* target, det_call_t* call, const cs_insn* insn) {
                     }
 
                     /* copy bytes and return. */
+                    /* NOLINTNEXTLINE */
                     memcpy(call->bytes, (void*)insn->address,
                            insn->size < 32u ? insn->size : 32u);
                     return E_INTT_RESULT_SUCCESS;
@@ -259,6 +263,7 @@ find_call_barm64(const void* target, det_call_t* call, const cs_insn* insn) {
                     call->size = insn->size;
 
                     /* copy bytes and return. */
+                    /* NOLINTNEXTLINE */
                     memcpy(call->bytes, (void*)insn->address,
                            insn->size < 32u ? insn->size : 32u);
                     return E_INTT_RESULT_SUCCESS;
@@ -292,6 +297,7 @@ det_call_target(void* source, const void* target) {
     /* allocate the pointer. */
     det_call_t* call = calloc(1, sizeof *call);
     if (call == 0x0) {
+        /* NOLINTNEXTLINE */
         fprintf(stderr, "calloc failed; could not allocate memory for det_call_t*.\n");
         return 0x0;
     }
@@ -303,6 +309,8 @@ det_call_target(void* source, const void* target) {
     cs_insn* insn = cs_malloc(handle);
     if (!insn) {
         cs_close(&handle);
+        free(call);
+        /* NOLINTNEXTLINE */
         fprintf(stderr, "cs_malloc failed; could not allocate memory for instructions.\n");
         return 0x0;
     }
@@ -320,6 +328,7 @@ det_call_target(void* source, const void* target) {
                         cs_close(&handle);
                         return call;
                     }
+                    break;
                 }
                 /* same for both arm32 and arm64. */
                 case (CS_ARCH_ARM): {
@@ -329,6 +338,7 @@ det_call_target(void* source, const void* target) {
                         cs_close(&handle);
                         return call;
                     }
+                    break;
                 }
                 case (CS_ARCH_ARM64): {
                     if e_intt_passed(find_call_barm64(target, call, insn)) {
@@ -336,6 +346,7 @@ det_call_target(void* source, const void* target) {
                         cs_close(&handle);
                         return call;
                     }
+                    break;
                 }
                 default: break;
             }
@@ -343,6 +354,7 @@ det_call_target(void* source, const void* target) {
     }
 
     /* free & return. */
+    free(call);
     cs_free(insn, 1u);
     cs_close(&handle);
     return 0x0;

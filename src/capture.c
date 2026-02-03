@@ -30,6 +30,7 @@ tapi_make_capture(tapi_sink_t* sink, tapi_stream_t stream) {
     // open the streams.
     int fds[2];
     if (pipe(fds) == -1) {
+        /* NOLINTNEXTLINE */
         fprintf(stderr, "pipe failed; could not create pipe for stdout and stderr.\n");
         exit(EXIT_FAILURE);
     }
@@ -40,10 +41,12 @@ tapi_make_capture(tapi_sink_t* sink, tapi_stream_t stream) {
     fflush(stream);
     capture->dst_fd = dup(fileno(stream));
     if (capture->dst_fd == -1) {
+        /* NOLINTNEXTLINE */
         fprintf(stderr, "pipe failed; could not create pipe for stdout and stderr.\n");
         exit(EXIT_FAILURE);
     }
     if (dup2(capture->pipewr, fileno(stream)) == -1) {
+        /* NOLINTNEXTLINE */
         fprintf(stderr, "dup2 failed; could not copy over pipe_wr fd to stdout.\n");
         exit(EXIT_FAILURE);
     }
@@ -65,6 +68,7 @@ tapi_end_capture(tapi_capture_t* capture) {
     /* flush the stream which we capture from. */
     fflush(capture->stream);
     if (dup2(capture->dst_fd, fileno(capture->stream)) == -1) {
+        /* NOLINTNEXTLINE */
         fprintf(stderr, "dup2 failed; could not copy saved fd over to stdout. errno: %d\n", errno);
         return;
     }
@@ -85,6 +89,7 @@ tapi_end_capture(tapi_capture_t* capture) {
     close(capture->piperd);
     capture->piperd = -1;
     if (n == -1) {
+        /* NOLINTNEXTLINE */
         fprintf(stderr, "read failed; could not read from stdout pipe. errno: %d\n", errno);
     }
 }
