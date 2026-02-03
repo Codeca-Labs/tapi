@@ -39,7 +39,6 @@ install_apt() {
     binutils \
     clang \
     clang-tools \
-    scan-build \
     libcapstone-dev \
     flawfinder \
     valgrind
@@ -82,6 +81,7 @@ install_zypper() {
     clang-tools \
     capstone-devel \
     flawfinder \
+    clang-tidy \
     valgrind
 }
 
