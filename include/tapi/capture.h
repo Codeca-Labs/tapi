@@ -25,7 +25,7 @@ typedef struct {
  * @return a pointer to an allocated capture structure.
  */
 tapi_capture_t*
-tapi_capture_make(tapi_sink_t* sink, tapi_stream_t stream);
+tapi_make_capture(tapi_sink_t* sink, tapi_stream_t stream);
 
 /**
  * @brief stop capturing data from a stream.
@@ -33,7 +33,7 @@ tapi_capture_make(tapi_sink_t* sink, tapi_stream_t stream);
  * @param capture the capture to be ended.
  */
 void
-tapi_capture_end(tapi_capture_t* capture);
+tapi_end_capture(tapi_capture_t* capture);
 
 /**
  * @brief free a capture structure.
@@ -41,5 +41,7 @@ tapi_capture_end(tapi_capture_t* capture);
  * @param capture the capture to be freed.
  */
 void
-tapi_capture_destroy(tapi_capture_t* capture);
+tapi_destroy_capture(tapi_capture_t* capture);
+
+#define tapi_quick_capture_to_buffer()
 #endif /* TAPI_CAPTURE_H */

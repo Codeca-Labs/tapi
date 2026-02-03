@@ -36,7 +36,7 @@ typedef struct {
  * @return a pointer to an allocated sink.
  */
 tapi_sink_t*
-tapi_sink_make();
+tapi_make_sink();
 
 /**
  * @brief set a pre-allocated buffer to the destination of the sink.
@@ -63,5 +63,5 @@ tapi_sink_setdfp(tapi_sink_t* sink, tapi_stream_t stream);
  * @param sink the sink to be freed.
  */
 void
-tapi_sink_destroy(tapi_sink_t* sink);
+tapi_destroy_sink(tapi_sink_t* sink);
 #endif /* TAPI_SINK_H */

@@ -16,7 +16,7 @@
  * @return a pointer to an allocated sink.
  */
 tapi_sink_t*
-tapi_sink_make() {
+tapi_make_sink() {
 	/* allocate and return. */
 	tapi_sink_t* sink = calloc(1u, sizeof *sink);
 	return sink;
@@ -64,7 +64,7 @@ tapi_sink_setdfp(tapi_sink_t* sink, tapi_stream_t stream) {
  * @param sink the sink to be freed.
  */
 void
-tapi_sink_destroy(tapi_sink_t* sink) {
+tapi_destroy_sink(tapi_sink_t* sink) {
 	/* if it is a memory stream, we do not free the buffer. */
 	free(sink);
 };
