@@ -1,6 +1,6 @@
 /**
  * @author Sean Hobeck
- * @date 2026-01-25
+ * @date 2026-02-02
  */
 #include "guard.h"
 
@@ -62,7 +62,9 @@ guard_create(void* address, size_t length) {
     /* we find the relative page bounds. */
     guard->address = page_align_down(address, get_page_size());
     guard->length = length;
+    /* NOLINTNEXTLINE */
     if (mprotect(guard->address, guard->length, PROT_READ | PROT_WRITE | PROT_EXEC) != 0x0) {
+        /* NOLINTNEXTLINE */
         fprintf(stderr, "mprotect failed; could not allocate memory for pguard.");
 #else
     /* winapi doesn't care and does it for us. */
@@ -70,11 +72,11 @@ guard_create(void* address, size_t length) {
     guard->length = length;
     if (VirtualProtect(guard->address, length, PAGE_EXECUTE_READWRITE, &guard->flags) !=
         0x0) {
-        fprintf(stderr, "VirtualProtect failed; could not allocate memory for pguard.");
+        /* we can actually use MSVCs "safe" version for fprintf. */
+        fprintf_s(stderr, "VirtualProtect failed; could not allocate memory for pguard.");
 #endif
         return 0x0;
     }
-
     return guard;
 }
 
@@ -87,11 +89,15 @@ void
 guard_close(guard_t* guard) {
     /* remove write protection on the pages. */
 #ifndef _WIN32
-    if (mprotect(guard->address, guard->length, PROT_READ | PROT_EXEC) != 0x0)
+    if (mprotect(guard->address, guard->length, PROT_READ | PROT_EXEC) != 0x0) {
+        /* NOLINTNEXTLINE */
         fprintf(stderr, "mprotect failed; could not close pguard.");
+    }
 #else
     DWORD tmp;
-    if (VirtualProtect(guard->address, guard->length, guard->flags, &tmp) != 0x0)
-        fprintf(stderr, "VirtualProtect failed; could not close pguard.");
+    if (VirtualProtect(guard->address, guard->length, guard->flags, &tmp) != 0x0) {
+        /* we can actually use MSVCs "safe" version for fprintf. */
+        fprintf_s(stderr, "VirtualProtect failed; could not close pguard.");
+    }
 #endif
 }

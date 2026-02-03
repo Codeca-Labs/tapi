@@ -1,39 +1,121 @@
-#!/usr/bin/env sh
-set -eu
+#!/usr/bin/env bash
+set -euo pipefail
 
-PREFIX="${PREFIX:-/usr/local}"
-
-if command -v pkg-config >/dev/null 2>&1 && pkg-config --exists capstone; then
-  echo "capstone already installed: $(pkg-config --modversion capstone)"
-  exit 0
+# must be run as root (or via sudo)
+if [[ $EUID -ne 0 ]]; then
+  echo "get-deps failed; please run as root (or with su)."
+  exit 1
 fi
-
-tmpdir="$(mktemp -d)"
-trap 'rm -rf "$tmpdir"' EXIT
-
-echo "cloning capstone..."
-git clone --depth 1 https://github.com/capstone-engine/capstone.git "$tmpdir/capstone"
-
-echo "building capstone..."
-make -C "$tmpdir/capstone"
-
-echo "installing capstone to $PREFIX (requires sudo)..."
-sudo make -C "$tmpdir/capstone" install PREFIX="$PREFIX"
-
-if command -v ldconfig >/dev/null 2>&1; then
-  sudo ldconfig
-fi
-
-echo "verifying pkg-config..."
-if command -v pkg-config >/dev/null 2>&1; then
-  if pkg-config --exists capstone; then
-    echo "ok: capstone version $(pkg-config --modversion capstone)"
-    echo "cflags: $(pkg-config --cflags capstone)"
-    echo "libs:   $(pkg-config --libs capstone)"
-  else
-    echo "warning: pkg-config can't find capstone.pc."
-    echo "if you installed to a non-standard prefix, set PKG_CONFIG_PATH accordingly."
-  fi
+ARCH="$(uname -m)"
+OS_ID=""
+OS_LIKE=""
+if [[ -f /etc/os-release ]]; then
+  . /etc/os-release
+  OS_ID="${ID:-}"
+  OS_LIKE="${ID_LIKE:-}"
 else
-  echo "warning: pkg-config not installed; install it for easiest Makefile integration."
+  echo "get-deps failed; cannot determine linux distribution."
+  exit 1
 fi
+echo "detected arch: $ARCH."
+echo "detected os: $OS_ID."
+
+# sanity check arch
+case "$ARCH" in
+  x86_64|aarch64|armv7l|riscv64)
+    ;;
+  *)
+    echo "get-deps failed; unsupported arch: $ARCH."
+    exit 1
+    ;;
+esac
+
+# for apt pm distros.
+install_apt() {
+  apt-get update
+  apt-get install -y \
+    gcc \
+    build-essential \
+    binutils \
+    clang \
+    clang-tools \
+    scan-build \
+    libcapstone-dev \
+    flawfinder \
+    valgrind
+}
+
+# for dnf pm distros.
+install_dnf() {
+  dnf install -y \
+    gcc \
+    gcc-c++ \
+    make \
+    binutils \
+    clang \
+    clang-tools-extra \
+    capstone-devel \
+    flawfinder \
+    valgrind
+}
+
+# for pacman pm distros.
+install_pacman() {
+  pacman -Sy --noconfirm \
+    gcc \
+    binutils \
+    clang \
+    capstone \
+    flawfinder \
+    valgrind
+}
+
+# for zypper pm distros.
+install_zypper() {
+  zypper refresh
+  zypper install -y \
+    gcc \
+    gcc-c++ \
+    make \
+    binutils \
+    clang \
+    clang-tools \
+    capstone-devel \
+    flawfinder \
+    valgrind
+}
+
+# go through each dist.
+case "$OS_ID" in
+  ubuntu|debian|linuxmint)
+    install_apt
+    ;;
+  fedora|rhel|centos|rocky|almalinux)
+    install_dnf
+    ;;
+  arch)
+    install_pacman
+    ;;
+  opensuse*|sles)
+    install_zypper
+    ;;
+  alpine)
+    install_apk
+    ;;
+  *)
+    # fallback using ID_LIKE
+    case "$OS_LIKE" in
+      *debian*)
+        install_apt
+        ;;
+      *rhel*|*fedora*)
+        install_dnf
+        ;;
+      *)
+        echo "get-deps; unsupported dist.: $OS_ID."
+        exit 1
+        ;;
+    esac
+    ;;
+esac
+echo "get-deps, all dependencies installed successfully!"

@@ -1,6 +1,6 @@
 /**
  * @author Sean Hobeck
- * @date 2026-01-25
+ * @date 2026-02-02
  */
 #include <tapi/dyna.h>
 
@@ -62,6 +62,7 @@ dyna_push(dyna_t* array, void* data) {
         size_t _capacity = array->capacity == 0u ? 16u : array->capacity * 2u;
         void** _data = realloc(array->data, sizeof(void*) * _capacity);
         if (!_data) {
+            /* NOLINTNEXTLINE */
             fprintf(stderr, "realloc failed; could not allocate memory for push.");
             return; /* do NOT exit on failure. */
         }
@@ -130,6 +131,7 @@ dyna_shrink(dyna_t* array) {
     /* do a realloc down where capacity = length. */
     void** _data = realloc(array->data, sizeof(void*) * array->length);
     if (!_data) {
+        /* NOLINTNEXTLINE */
         fprintf(stderr, "realloc failed; could not allocate memory for shrink.");
         exit(EXIT_FAILURE); /* exit on failure. */
     }
@@ -153,6 +155,7 @@ dyna_make(void** data, size_t length) {
     array->capacity = length;
 
     /* copy and return. */
+    /* NOLINTNEXTLINE */
     memcpy(array->data, data, length);
     return array;
 }

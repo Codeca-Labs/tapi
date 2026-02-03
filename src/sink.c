@@ -17,9 +17,9 @@
  */
 tapi_sink_t*
 tapi_make_sink() {
-	/* allocate and return. */
-	tapi_sink_t* sink = calloc(1u, sizeof *sink);
-	return sink;
+    /* allocate and return. */
+    tapi_sink_t* sink = calloc(1u, sizeof *sink);
+    return sink;
 }
 
 /**
@@ -31,18 +31,19 @@ tapi_make_sink() {
  */
 void
 tapi_sink_setdbf(tapi_sink_t* sink, char* buffer, size_t length) {
-	/* set the type and then the buffer. */
-	sink->buffer.data = buffer;
-	sink->buffer.length = length;
-	sink->type = E_TAPI_SINK_TYPE_BUF;
+    /* set the type and then the buffer. */
+    sink->buffer.data = buffer;
+    sink->buffer.length = length;
+    sink->type = E_TAPI_SINK_TYPE_BUF;
 
-	/* set the stream and then we are done. */
-	tapi_stream_t stream = fmemopen(sink->buffer.data, sink->buffer.length, "w");
-	if (stream == 0x0) {
-		fprintf(stderr, "fmemopen failed; could not open memory stream, was it allocated? errno: %d\n", errno);
-		return;
-	}
-	sink->stream = stream;
+    /* set the stream and then we are done. */
+    tapi_stream_t stream = fmemopen(sink->buffer.data, sink->buffer.length, "w");
+    if (stream == 0x0) {
+        /* NOLINTNEXTLINE */
+        fprintf(stderr, "fmemopen failed; could not open memory stream, was it allocated? errno: %d\n", errno);
+        return;
+    }
+    sink->stream = stream;
 }
 
 /**
@@ -53,9 +54,9 @@ tapi_sink_setdbf(tapi_sink_t* sink, char* buffer, size_t length) {
  */
 void
 tapi_sink_setdfp(tapi_sink_t* sink, tapi_stream_t stream) {
-	/* set the type and then the stream, and we are done. */
-	sink->stream = stream;
-	sink->type = E_TAPI_SINK_TYPE_STR;
+    /* set the type and then the stream, and we are done. */
+    sink->stream = stream;
+    sink->type = E_TAPI_SINK_TYPE_STR;
 }
 
 /**
@@ -65,6 +66,6 @@ tapi_sink_setdfp(tapi_sink_t* sink, tapi_stream_t stream) {
  */
 void
 tapi_destroy_sink(tapi_sink_t* sink) {
-	/* if it is a memory stream, we do not free the buffer. */
-	free(sink);
+    /* if it is a memory stream, we do not free the buffer. */
+    free(sink);
 };

@@ -1,6 +1,6 @@
 /**
  * @author Sean Hobeck
- * @date 2026-01-25
+ * @date 2026-02-02
  */
 #include <tapi/mock.h>
 
@@ -48,12 +48,14 @@ tapi_mock_apply(tapi_mock_t* mock) {
     det_call_t* call = det_call_target(mock->orig, mock->target);
     mock->call = call->call;
     mock->size = call->size;
+    /* NOLINTNEXTLINE */
     memcpy(mock->orig_bytes, call->bytes, mock->size);
 
     /* apply the patch to the call. */
     patch_call_target(call, mock->mocked);
 
     /* we read the new bytes and store. */
+    /* NOLINTNEXTLINE */
     memcpy(mock->mocked_bytes, mock->call, mock->size);
     free(call);
 };
@@ -67,6 +69,7 @@ void
 tapi_mock_restore(tapi_mock_t* mock) {
     /* we can't restore a mock that hasn't been applied... */
     if (mock->call == 0x0) {
+        /* NOLINTNEXTLINE */
         fprintf(stderr, "cannot restore unapplied mock.\n");
         return;
     }
