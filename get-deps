@@ -41,7 +41,13 @@ install_apt() {
     clang-tools \
     libcapstone-dev \
     flawfinder \
-    valgrind
+    valgrind \
+
+  # qemu + cross-compilers.
+  apt-get install \
+    qemu-user \
+    gcc-arm-linux-gnueabihf \
+    gcc-aarch64-linux-gnu
 }
 
 # for dnf pm distros.
@@ -56,6 +62,14 @@ install_dnf() {
     capstone-devel \
     flawfinder \
     valgrind
+
+  # qemu + cross-compilers
+  dnf install \
+    qemu-user \
+    qemu-system-x86 \
+    qemu-system-arm \
+    gcc-aarch64-linux-gnu \
+    gcc-arm-linux-gnu
 }
 
 # for pacman pm distros.
@@ -67,6 +81,12 @@ install_pacman() {
     capstone \
     flawfinder \
     valgrind
+
+  # qemu + cross-compilers
+  pacman -Sy --noconfirm \
+    qemu \
+    aarch64-linux-gnu-gcc \
+    arm-linux-gnueabihf-gcc
 }
 
 # for zypper pm distros.
@@ -83,6 +103,14 @@ install_zypper() {
     flawfinder \
     clang-tidy \
     valgrind
+
+  # qemu + cross-compilers
+  zypper install \
+    qemu \
+    qemu-tools \
+    qemu-extra \
+    cross-aarch64-gcc12 \
+    cross-arm-gcc12
 }
 
 # go through each dist.
