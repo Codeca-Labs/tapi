@@ -262,7 +262,7 @@ patch_call_target(det_call_t* call, void* new_target) {
                 }
                 break;
             }
-            case CS_ARCH_ARM64: {
+            case CS_ARCH_AARCH64: {
                 if e_intt_passed(patch_relative_barm64(call->call, call->size, new_target)) {
                     break;
                 }

@@ -58,3 +58,4 @@ dkms.conf
 /bin
 /build
 /tests/.idea
+/vendor/build

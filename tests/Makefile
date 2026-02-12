@@ -1,47 +1,47 @@
 # compiler and compiler flags
-CC := gcc
-CFLAGS := -g -O0 -Wall -Wextra -std=c17
+cc ?= gcc
+cflags := -g -O0 -Wall -Wextra -std=c17
 
 # dirs relative to test/
-ROOT_DIR  := ..
-SRC_DIR   := .
-BUILD_DIR := $(ROOT_DIR)/build/test
-BIN_DIR   := $(ROOT_DIR)/bin
+root_dir  := ..
+src_dir   := .
+build_dir := $(root_dir)/build/test
+bin_dir   := $(root_dir)/bin
 
 # library we link against
-LIB_NAME := tapi
-LIB_FILE := $(BIN_DIR)/lib$(LIB_NAME).so
+lib_name := tapi
+lib_file := $(bin_dir)/lib$(lib_name).so
 
 # include paths (public headers)
-CFLAGS += -I$(ROOT_DIR)/include
+cflags += -I$(root_dir)/include
 
 # link flags:
 # -L../bin so -ltapi finds libtapi.so
 # rpath=$$ORIGIN so test binaries (in bin/) find libtapi.so (also in bin/) at runtime
-LDFLAGS := -L$(BIN_DIR) -Wl,-rpath,'$$ORIGIN'
-LDLIBS  := -l$(LIB_NAME)
+ldflags := -L$(bin_dir) -Wl,-rpath,'$$ORIGIN'
+ldlibs  := -l$(lib_name)
 
 # each test .c becomes its own executable in bin/
-TEST_SRCS := $(shell find $(SRC_DIR) -maxdepth 1 -name '*.c')
-TEST_OBJS := $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(TEST_SRCS))
-TEST_BINS := $(patsubst $(SRC_DIR)/%.c,$(BIN_DIR)/%,$(TEST_SRCS))
+test_srcs := $(shell find $(src_dir) -maxdepth 1 -name '*.c')
+test_objs := $(patsubst $(src_dir)/%.c,$(build_dir)/%.o,$(test_srcs))
+test_bins := $(patsubst $(src_dir)/%.c,$(bin_dir)/%,$(test_srcs))
 
 .PHONY: all
-all: $(TEST_BINS)
+all: $(test_bins)
 
-$(BIN_DIR)/%: $(BUILD_DIR)/%.o $(LIB_FILE)
+$(bin_dir)/%: $(build_dir)/%.o $(lib_file)
 	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) $< -o $@ $(LDFLAGS) $(LDLIBS)
+	$(cc) $(cflags) $< -o $@ $(ldflags) $(ldlibs)
 
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
+$(build_dir)/%.o: $(src_dir)/%.c
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(cc) $(cflags) -c $< -o $@
 
 .PHONY: run
 run: all
-	@set -e; for t in $(TEST_BINS); do echo "==> $$t"; $$t; done
+	@set -e; for t in $(test_bins); do echo "==> $$t"; $$t; done
 
 .PHONY: clean
 clean:
-	rm -rf $(BUILD_DIR)
-	rm -f $(TEST_BINS)
+	rm -rf $(build_dir)
+	rm -f $(test_bins)

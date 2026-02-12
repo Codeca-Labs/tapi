@@ -14,9 +14,9 @@ get_arch(void) {
     return (arch_t) { .arch = CS_ARCH_X86, .mode = CS_MODE_32 };
 #endif
 #ifdef __aarch64__
-    return (arch_t) { .arch = CS_ARCH_ARM, .mode = CS_MODE_ARM };
+    return (arch_t) { .arch = CS_ARCH_AARCH64, .mode = CS_MODE_ARM };
 #endif
 #ifdef __arm__
-    return (arch_t) { .arch = CS_ARCH_ARM64, .mode = CS_MODE_ARM };
+    return (arch_t) { .arch = CS_ARCH_ARM, .mode = CS_MODE_ARM };
 #endif
 };

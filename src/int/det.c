@@ -227,7 +227,7 @@ find_call_barm32(const void* target, det_call_t* call, const cs_insn* insn) {
 }
 
 /**
- * @brief search through an arm64 instructions opt. info to find if it is a call to an immediate/
+ * @brief search through an aarch64 instructions opt. info to find if it is a call to an immediate/
  *  relative address within memory; for aarch64 only.
  *
  * @param target the target address to search within the instruction for.
@@ -236,17 +236,17 @@ find_call_barm32(const void* target, det_call_t* call, const cs_insn* insn) {
  * @return ref. to intt.h for enum.
  */
 internal e_intt_result_t
-find_call_barm64(const void* target, det_call_t* call, const cs_insn* insn) {
+find_call_baarch64(const void* target, det_call_t* call, const cs_insn* insn) {
     /* is this a branch with link insn? */
-    if (insn->id == ARM64_INS_BL) {
-        cs_arm64* arm64 = &insn->detail->arm64;
+    if (insn->id == AARCH64_INS_BL) {
+        cs_aarch64* aarch64 = &insn->detail->aarch64;
 
         /* iterate. */
-        for (int i = 0; i < arm64->op_count; i++) {
-            cs_arm64_op* op = &arm64->operands[i];
+        for (int i = 0; i < aarch64->op_count; i++) {
+            cs_aarch64_op* op = &aarch64->operands[i];
 
             /* are we dealing with the immediate value? */
-            if (op->type == ARM64_OP_IMM) {
+            if (op->type == AARCH64_OP_IMM) {
                 uint64_t target_addr = op->imm;
 
                 // ARM64 BL is always relative
@@ -272,7 +272,7 @@ find_call_barm64(const void* target, det_call_t* call, const cs_insn* insn) {
         }
     }
     /* blr for indirect calls via register. */
-    if (insn->id == ARM64_INS_BLR) {
+    if (insn->id == AARCH64_INS_BLR) {
         /* this is unsupported at the moment. */
         return E_INTT_RESULT_FAILURE;
     }
@@ -330,7 +330,7 @@ det_call_target(void* source, const void* target) {
                     }
                     break;
                 }
-                /* same for both arm32 and arm64. */
+                /* same for both arm32 and aarch64. */
                 case (CS_ARCH_ARM): {
                     /* this is really aarch32 + thumb. */
                     if e_intt_passed(find_call_barm32(target, call, insn)) {
@@ -340,8 +340,8 @@ det_call_target(void* source, const void* target) {
                     }
                     break;
                 }
-                case (CS_ARCH_ARM64): {
-                    if e_intt_passed(find_call_barm64(target, call, insn)) {
+                case (CS_ARCH_AARCH64): {
+                    if e_intt_passed(find_call_baarch64(target, call, insn)) {
                         cs_free(insn, 1u);
                         cs_close(&handle);
                         return call;
