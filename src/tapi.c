@@ -81,6 +81,7 @@ tapi_run_tests(void) {
         _endforeach;
         if (test->teardown != 0x0) test->teardown();
     _endforeach;
+    printf("tapi; total tests passed: [%zu/%zu].\n", passed, l_tests->length);
 };
 
 /**

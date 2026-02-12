@@ -19,4 +19,4 @@ get_arch(void) {
 #ifdef __arm__
     return (arch_t) { .arch = CS_ARCH_ARM, .mode = CS_MODE_ARM };
 #endif
-};
+}

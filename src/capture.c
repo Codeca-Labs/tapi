@@ -80,7 +80,7 @@ tapi_end_capture(tapi_capture_t* capture) {
 
     /* close writer side so pipe will hit EOF. */
     ssize_t n;
-    while ((n = read(capture->piperd, buf, 4096u)) > 0u) {
+    while ((n = read(capture->piperd, buf, 4096u)) > 0l) {
         /* todo; all we do is simply write the data to the stream, if it fails then we stop. */
         fwrite(buf, n, 1u, capture->sink->stream);
     }

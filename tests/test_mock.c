@@ -22,7 +22,7 @@ e_tapi_test_result_t test_function() {
     return E_TAPI_TEST_RESULT_PASSED;
 };
 
-int main(int argc, char** argv) {
+int main() {
     tapi_test_t* test = tapi_make_test("test_function", test_function);
     tapi_add_mock_to_test(test, function, target_function, tested_function_target);
     tapi_test_t* tests[] = { test };

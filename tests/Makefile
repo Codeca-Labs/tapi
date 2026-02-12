@@ -1,35 +1,51 @@
 # compiler and compiler flags
-cc ?= gcc
 cflags := -g -O0 -Wall -Wextra -std=c17
+
+# architecture defs
+arch ?= $(shell uname -m)
+
+ifeq ($(arch),aarch64)
+  cc := aarch64-linux-gnu-gcc
+endif
+ifeq ($(arch),arm32)
+  cc := arm-linux-gnueabihf-gcc
+endif
+ifeq ($(arch),x86)
+  cc := i686-linux-gnu-gcc
+endif
+ifeq ($(arch),x86_64)
+  cc := gcc
+endif
 
 # dirs relative to test/
 root_dir  := ..
 src_dir   := .
-build_dir := $(root_dir)/build/test
-bin_dir   := $(root_dir)/bin
+build_dir := $(root_dir)/build/$(arch)/tests
+bin_dir   := $(root_dir)/bin/$(arch)
+test_bin_dir := $(bin_dir)/tests
 
 # library we link against
 lib_name := tapi
 lib_file := $(bin_dir)/lib$(lib_name).so
 
 # include paths (public headers)
-cflags += -I$(root_dir)/include
+cflags += -I$(bin_dir)/include
 
 # link flags:
-# -L../bin so -ltapi finds libtapi.so
-# rpath=$$ORIGIN so test binaries (in bin/) find libtapi.so (also in bin/) at runtime
-ldflags := -L$(bin_dir) -Wl,-rpath,'$$ORIGIN'
+# -L../bin/$(arch)/lib so -ltapi finds libtapi.so
+# rpath=$$ORIGIN/.. so test binaries (in bin/$(arch)/tests/) find libtapi.so (in bin/$(arch)/) at runtime
+ldflags := -L$(bin_dir) -Wl,-rpath,'$$ORIGIN/..'
 ldlibs  := -l$(lib_name)
 
-# each test .c becomes its own executable in bin/
+# each test .c becomes its own executable in bin/$(arch)/tests/
 test_srcs := $(shell find $(src_dir) -maxdepth 1 -name '*.c')
 test_objs := $(patsubst $(src_dir)/%.c,$(build_dir)/%.o,$(test_srcs))
-test_bins := $(patsubst $(src_dir)/%.c,$(bin_dir)/%,$(test_srcs))
+test_bins := $(patsubst $(src_dir)/%.c,$(test_bin_dir)/%,$(test_srcs))
 
 .PHONY: all
 all: $(test_bins)
 
-$(bin_dir)/%: $(build_dir)/%.o $(lib_file)
+$(test_bin_dir)/%: $(build_dir)/%.o $(lib_file)
 	@mkdir -p $(@D)
 	$(cc) $(cflags) $< -o $@ $(ldflags) $(ldlibs)
 
