@@ -21,7 +21,8 @@ run-clang-tidy -p . \
   -quiet > run_clang_tidy_build.log
 exit_code=$?
 if [ $exit_code != 0 ]; then
-  echo "lint-chk failed; please check run_clang_tidy_build.log!"
+  echo "lint-chk failed; please check run_clang_tidy_build.log, or run 'make clean + bear -- make
+  .'!"
   exit 1
 fi
 echo "run-clang-tidy diagnostic and analyzer checks passed."
