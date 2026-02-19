@@ -1,6 +1,6 @@
 /**
  * @author Sean Hobeck
- * @date 2026-02-02
+ * @date 2026-02-19
  */
 #include "patch.h"
 
@@ -47,14 +47,14 @@ patch_relative_bx86(void* call, const size_t size, const void* new_target) {
     /* x64 rel. call is always 5 bytes. */
     if (size < 5u) {
         /* NOLINTNEXTLINE */
-        fprintf(stderr, "bx86; instruction too small (%zu bytes).\n", size);
+        fprintf(stderr, "bx86/64; instruction too small (%zu bytes).\n", size);
         return E_INTT_RESULT_FAILURE;
     }
 
     /* verify its actually an e8 rel. call */
     if (code[0] != 0xe8) {
         /* NOLINTNEXTLINE */
-        fprintf(stderr, "bx86; not a rel. call (0x%02x).\n", code[0]);
+        fprintf(stderr, "bx86/64; not a rel. call (0x%02x).\n", code[0]);
         return E_INTT_RESULT_FAILURE;
     }
 
@@ -64,7 +64,7 @@ patch_relative_bx86(void* call, const size_t size, const void* new_target) {
     /* check if the offset is 32-bit signed. */
     if (offset64 > INT32_MAX || offset64 < INT32_MIN) {
         /* NOLINTNEXTLINE */
-        fprintf(stderr, "bx64; new target out of range (>2gb).\n");
+        fprintf(stderr, "bx86/64; new target out of range (>2gb).\n");
         return E_INTT_RESULT_FAILURE;
     }
     int32_t offset = (int32_t)offset64;
@@ -85,26 +85,29 @@ patch_relative_bx86(void* call, const size_t size, const void* new_target) {
 internal e_intt_result_t
 patch_relative_barm(void* call, const size_t size, const void* new_target) {
     /* we only expect 4 bytes. */
-    if (size != 4) {
-        printf("barm32; expected 4-byte insn., got %zu bytes.\n", size);
+    if (size != 4u) {
+        /* NOLINTNEXTLINE */
+        fprintf(stderr, "barm32; expected 4-byte insn., got %zu bytes.\n", size);
         return E_INTT_RESULT_FAILURE;
     }
 
     /* check if its a bl instruction (opcode bits 31-24 = 0xeb). */
     uint32_t* insn = call;
     if ((*insn & 0xff000000) != 0xeb000000) {
-        printf("barm32; not a bl insn. (0x%08x).\n", *insn);
+        /* NOLINTNEXTLINE */
+        fprintf(stderr, "barm32; not a bl insn. (0x%08x).\n", *insn);
         return E_INTT_RESULT_FAILURE;
     }
 
     /* offset calc. = (target - (pc + 8)) >> 2 (we do the shifting later). */
-    uintptr_t pc = (uintptr_t)call;
-    uintptr_t target = (uintptr_t)new_target;
+    uint64_t pc = (uint64_t)call;
+    uint64_t target = (uint64_t)new_target;
     int32_t offset = (int32_t)(target - (pc + 8u));
 
     /* check 24-bit signed range (+32mb). */
     if (offset > 0x7fffff || offset < -0x800000) {
-        printf("barm32; target out of range (+32mb).\n");
+        /* NOLINTNEXTLINE */
+        fprintf(stderr, "barm32; target out of range (+32mb).\n");
         return E_INTT_RESULT_FAILURE;
     }
 
@@ -145,8 +148,8 @@ patch_relative_barmth(void* call, const size_t size, const void* new_target) {
     }
 
     /* offset calc. = (target - (pc + 4)) >> 1 */
-    uintptr_t pc = (uintptr_t)call;
-    uintptr_t target = (uintptr_t)new_target;
+    uint64_t pc = (uint64_t)call;
+    uint64_t target = (uint64_t)new_target & ~1u;
     int32_t offset = (int32_t)(target - (pc + 4u));
 
     /* check 21-bit signed range (+16mb). */
@@ -240,14 +243,17 @@ int32_t
 patch_call_target(det_call_t* call, void* new_target) {
     /* create a write-protect guard for an entire page. */
     guard_t* guard = guard_create(call->call, call->size);
+
+    /* patch for a specific backend. */
+    arch_t architecture = get_arch();
     if (call->is_rel) {
-        /* patch for a specific backend. */
-        arch_t architecture = get_arch();
         switch (architecture.arch) {
             case CS_ARCH_X86: {
                 if e_intt_passed(patch_relative_bx86(call->call, call->size, new_target)) {
                     break;
                 }
+                /* NOLINTNEXTLINE */
+                fprintf(stderr, "bx86/64; patching relative call failed.\n");
                 break;
             }
             case CS_ARCH_ARM: {
@@ -260,12 +266,16 @@ patch_call_target(det_call_t* call, void* new_target) {
                 else if e_intt_passed(patch_relative_barm(call->call, call->size, new_target)) {
                     break;
                 }
+                /* NOLINTNEXTLINE */
+                fprintf(stderr, "barm32/th; patching relative call failed.\n");
                 break;
             }
             case CS_ARCH_AARCH64: {
                 if e_intt_passed(patch_relative_barm64(call->call, call->size, new_target)) {
                     break;
                 }
+                /* NOLINTNEXTLINE */
+                fprintf(stderr, "barm64; patching relative call failed.\n");
                 break;
             }
             default: {
@@ -276,13 +286,14 @@ patch_call_target(det_call_t* call, void* new_target) {
         }
     } else {
         /* NOLINTNEXTLINE */
-        fprintf(stderr, "cannot patch a non-relative call!\n");
+        fprintf(stderr, "unknown architecture; cannot patch a non-relative call!\n");
         guard_close(guard);
         free(guard);
         return 0u;
     }
 
     /* close the guard and flush insn. cache. */
+    _cleanup:
     guard_close(guard);
     free(guard);
     flush_insn_cache(call->call, call->size);
