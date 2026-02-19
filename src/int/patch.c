@@ -293,7 +293,6 @@ patch_call_target(det_call_t* call, void* new_target) {
     }
 
     /* close the guard and flush insn. cache. */
-    _cleanup:
     guard_close(guard);
     free(guard);
     flush_insn_cache(call->call, call->size);
