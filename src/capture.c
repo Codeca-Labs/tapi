@@ -1,6 +1,6 @@
 /**
  * @author Sean Hobeck
- * @date 2026-02-03
+ * @date 2026-02-19
  */
 #include <tapi/capture.h>
 
@@ -27,7 +27,7 @@ tapi_make_capture(tapi_sink_t* sink, tapi_stream_t stream) {
     capture->sink = sink;
     capture->stream = stream;
 
-    // open the streams.
+    /* open the streams. */
     int fds[2];
     if (pipe(fds) == -1) {
         /* NOLINTNEXTLINE */
