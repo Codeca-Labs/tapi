@@ -1,6 +1,6 @@
 /**
  * @author Sean Hobeck
- * @date 2026-01-25
+ * @date 2026-02-21
  */
 #ifndef DET_H
 #define DET_H
@@ -38,11 +38,11 @@ typedef struct {
 } det_call_t;
 
 /**
- * @brief ...
+ * @brief determine the call target within a function in memory.
  *
- * @param source the source...
- * @param target the destination..
- * @return ...
+ * @param source the function in memory to search through.
+ * @param target the target call to look for.
+ * @return a pointer to a det_call_t structure, and 0 o.w.
  */
 det_call_t*
 det_call_target(void* source, const void* target);

@@ -1,6 +1,6 @@
 /**
  * @author Sean Hobeck
- * @date 2026-02-02
+ * @date 2026-02-21
  */
 #include <tapi/tapi.h>
 
@@ -30,7 +30,7 @@ tapi_setup_tests(tapi_test_t** tests, size_t count) {
     /* if we already have tests. */
     if (l_tests != 0x0) {
         /* NOLINTNEXTLINE */
-        fprintf(stderr, "tests != null; refer to tapi_add_test().\n");
+        fprintf(stderr, "tapi, setup_tests; tests != null; refer to tapi_add_test().\n");
         return;
     }
 

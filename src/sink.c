@@ -1,6 +1,6 @@
 /**
  * @author Sean Hobeck
- * @date 2026-02-02
+ * @date 2026-02-21
  */
 #include <tapi/sink.h>
 
@@ -40,7 +40,8 @@ tapi_sink_setdbf(tapi_sink_t* sink, char* buffer, size_t length) {
     tapi_stream_t stream = fmemopen(sink->buffer.data, sink->buffer.length, "w");
     if (stream == 0x0) {
         /* NOLINTNEXTLINE */
-        fprintf(stderr, "fmemopen failed; could not open memory stream, was it allocated? errno: %d\n", errno);
+        fprintf(stderr, "tapi, sink_setdbf; fmemopen failed; could not open memory stream, was it "
+                        "allocated? errno: %d\n", errno);
         return;
     }
     sink->stream = stream;

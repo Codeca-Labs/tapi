@@ -1,6 +1,6 @@
 /**
  * @author Sean Hobeck
- * @date 2026-02-02
+ * @date 2026-02-21
  */
 #include "guard.h"
 
@@ -65,7 +65,8 @@ guard_create(void* address, size_t length) {
     /* NOLINTNEXTLINE */
     if (mprotect(guard->address, guard->length, PROT_READ | PROT_WRITE | PROT_EXEC) != 0x0) {
         /* NOLINTNEXTLINE */
-        fprintf(stderr, "mprotect failed; could not allocate memory for pguard.");
+        fprintf(stderr, "tapi, guard_create; mprotect failed; could not allocate memory for pguard"
+                        ".");
 #else
     /* winapi doesn't care and does it for us. */
     guard->address = address;
@@ -73,7 +74,8 @@ guard_create(void* address, size_t length) {
     if (VirtualProtect(guard->address, length, PAGE_EXECUTE_READWRITE, &guard->flags) !=
         0x0) {
         /* we can actually use MSVCs "safe" version for fprintf. */
-        fprintf_s(stderr, "VirtualProtect failed; could not allocate memory for pguard.");
+        fprintf_s(stderr, "tapi, guard_create; VirtualProtect failed; could not allocate memory "
+                          "for pguard.");
 #endif
         return 0x0;
     }
@@ -91,13 +93,13 @@ guard_close(guard_t* guard) {
 #ifndef _WIN32
     if (mprotect(guard->address, guard->length, PROT_READ | PROT_EXEC) != 0x0) {
         /* NOLINTNEXTLINE */
-        fprintf(stderr, "mprotect failed; could not close pguard.");
+        fprintf(stderr, "tapi, guard_close; mprotect failed; could not close pguard.");
     }
 #else
     DWORD tmp;
     if (VirtualProtect(guard->address, guard->length, guard->flags, &tmp) != 0x0) {
         /* we can actually use MSVCs "safe" version for fprintf. */
-        fprintf_s(stderr, "VirtualProtect failed; could not close pguard.");
+        fprintf_s(stderr, "tapi, guard_close; VirtualProtect failed; could not close pguard.");
     }
 #endif
 }
