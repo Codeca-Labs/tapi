@@ -1,6 +1,6 @@
 /**
  * @author Sean Hobeck
- * @date 2026-02-19
+ * @date 2026-02-21
  */
 #include "det.h"
 
@@ -71,21 +71,24 @@ det_function_size(void* address, size_t max_size) {
     size_t size = 0;
     arch_t architecture = get_arch();
     /* detect if we need to use thumb based on the thumb bit. */
-    bool is_thumb = architecture.mode == CS_MODE_ARM && (uint64_t) address & 1u;
-    if (is_thumb)
+    bool is_thumb = architecture.mode == CS_MODE_ARM && (uintptr_t)address & 1u;
+    if (is_thumb) {
+        address = (void*)((uintptr_t)address & ~1u);
         architecture.mode = CS_MODE_THUMB;
+    }
     cs_open(architecture.arch, architecture.mode, &handle);
     cs_option(handle, CS_OPT_DETAIL, CS_OPT_ON);
 
     /* get the bytes at the address, and create an iterator. */
     const uint8_t* bytes = (unsigned char*) address;
-    uint64_t iter = (uint64_t) address;
+    uint64_t iter = (uintptr_t) address;
     size_t code_size = max_size;
     cs_insn* insn = cs_malloc(handle);
     if (!insn) {
         cs_close(&handle);
         /* NOLINTNEXTLINE */
-        fprintf(stderr, "cs_malloc failed; could not allocate memory for instructions.");
+        fprintf(stderr, "tapi, det_function_size; cs_malloc failed; could not allocate memory for "
+                        "instructions.");
         return 0;
     }
 
@@ -98,6 +101,25 @@ det_function_size(void* address, size_t max_size) {
         /* are any of these function end instructions? */
         if (is_end_inst(insn, handle))
             found_end = !is_tail_call(insn, architecture);
+
+        /* if we aren't at the start of a function, check if we are at a common prologue. */
+        if (size != insn->size || found_end) {
+            bool is_prologue = false;
+            if (architecture.arch == CS_ARCH_ARM) {
+                /* common arm/thumb prologues, push {r7, ...} or push {fp, ...}. */
+                is_prologue = insn->id == ARM_INS_PUSH;
+            }
+            else if (architecture.arch == CS_ARCH_AARCH64) {
+                /* common aarch64 prologues, stp x29, x30, [sp, ...]. */
+                is_prologue = insn->id == AARCH64_INS_STP;
+            }
+
+            /* if we hit another function prologue, stop before it. */
+            if (is_prologue) {
+                size -= insn->size;
+                break;
+            }
+        }
 
         /* have we already hit a function-ending instruction? */
         if (found_end) {
@@ -125,7 +147,8 @@ det_function_size(void* address, size_t max_size) {
         /* sanity bounds. */
         if (size >= max_size) {
             /* NOLINTNEXTLINE */
-            fprintf(stderr, "warning; hit max search size of %zu bytes\n", max_size);
+            fprintf(stderr, "tapi, det_function_size; warning; hit max search size of %zu bytes\n",
+                max_size);
             break;
         }
     }
@@ -323,7 +346,7 @@ is_call_arch(csh handle, cs_insn* insn, arch_t architecture) {
     if (architecture.arch == CS_ARCH_AARCH64) {
         return insn->id == AARCH64_INS_BL || insn->id == AARCH64_INS_BLR;
     }
-    /* arm32/ armhf. */
+    /* arm32/ armth. */
     if (architecture.arch == CS_ARCH_ARM) {
         return insn->id == ARM_INS_BL || insn->id == ARM_INS_BLX;
     }
@@ -332,11 +355,11 @@ is_call_arch(csh handle, cs_insn* insn, arch_t architecture) {
 }
 
 /**
- * @brief ...
+ * @brief determine the call target within a function in memory.
  *
- * @param source the source...
- * @param target the destination..
- * @return ...
+ * @param source the function in memory to search through.
+ * @param target the target call to look for.
+ * @return a pointer to a det_call_t structure, and 0 o.w.
  */
 det_call_t*
 det_call_target(void* source, const void* target) {
@@ -355,21 +378,25 @@ det_call_target(void* source, const void* target) {
     det_call_t* call = calloc(1u, sizeof *call);
     if (call == 0x0) {
         /* NOLINTNEXTLINE */
-        fprintf(stderr, "calloc failed; could not allocate memory for det_call_t*.\n");
+        fprintf(stderr, "tapi, det_call_target; calloc failed; could not allocate memory for "
+                        "det_call_t*.\n");
         return 0x0;
     }
     call->is_thumb = is_thumb;
 
     /* set up address and size for the iteration. */
+    size_t size = det_function_size(source, 0x1000);
+    if (is_thumb)
+        source = (void*)((uintptr_t)source & ~1u);
     const uint8_t* bytes = source;
     uint64_t address = (uint64_t) source;
-    size_t size = det_function_size(source, 0x1000);
     cs_insn* insn = cs_malloc(handle);
     if (!insn) {
         cs_close(&handle);
         free(call);
         /* NOLINTNEXTLINE */
-        fprintf(stderr, "cs_malloc failed; could not allocate memory for instructions.\n");
+        fprintf(stderr, "tapi det_call_target, cs_malloc failed; could not allocate memory for "
+                        "instructions.\n");
         return 0x0;
     }
 

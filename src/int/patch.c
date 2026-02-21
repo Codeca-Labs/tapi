@@ -1,6 +1,6 @@
 /**
  * @author Sean Hobeck
- * @date 2026-02-19
+ * @date 2026-02-21
  */
 #include "patch.h"
 
@@ -147,38 +147,38 @@ patch_relative_barmth(void* call, const size_t size, const void* new_target) {
         return E_INTT_RESULT_FAILURE;
     }
 
-    /* offset calc. = (target - (pc + 4)) >> 1 */
+    /* offset calc. = (target - (pc + 4)). */
     uint64_t pc = (uint64_t)call;
     uint64_t target = (uint64_t)new_target & ~1u;
     int32_t offset = (int32_t)(target - (pc + 4u));
 
-    /* check 21-bit signed range (+16mb). */
-    if (offset > 0xfffff || offset < -0x100000) {
-        printf("barmth; target out of range (+16mb).\n");
+    /* check 24-bit signed range (+/-16mb). */
+    if (offset > 0xffffff || offset < -0x1000000) {
+        /* NOLINTNEXTLINE */
+        fprintf(stderr, "barmth; target out of range (+/-16mb).\n");
         return E_INTT_RESULT_FAILURE;
     }
 
-    /* convert to halfword offset. */
-    offset = offset >> 1u;
+    /* thumb offset is split into imm11:imm10:sgn:i1:i2,
+     * first halfword = 11110 sgn imm10.
+     * second halfword = 11 j1 1 j2 imm11.
+     * where j1 = ~(i1 ^ sgn), j2 = ~(i2 ^ sgn).
+     * offset[24:1] -> {sgn, i1, i2, imm10, imm11}. */
+    uint32_t sgn = (offset >> 24) & 0x1;
+    uint32_t i1 = (offset >> 23) & 0x1;
+    uint32_t i2 = (offset >> 22) & 0x1;
+    uint32_t imm10 = (offset >> 12) & 0x3ff;
+    uint32_t imm11 = (offset >> 1) & 0x7ff;
 
-    /* extract and rebuild the offset fields. */
-    uint32_t signb = offset >> 24u & 0x1;
-    uint32_t i1 = ~(offset >> 23u) & 0x1;
-    uint32_t i2 = ~(offset >> 22u) & 0x1;
-    uint32_t imm10 = offset >> 12u & 0x3ff;
-    uint32_t imm11 = offset & 0x7ff;
+    /* calculate j1 and j2. */
+    uint32_t j1 = (~(i1 ^ sgn)) & 0x1;
+    uint32_t j2 = (~(i2 ^ sgn)) & 0x1;
 
-    /* recalculate j1 and j2. */
-    uint32_t j1 = ~(i1 ^ signb) & 0x1;
-    uint32_t j2 = ~(i2 ^ signb) & 0x1;
+    /* reconstruct instruction halves. */
+    uint16_t new_first = 0xf000 | (sgn << 10) | imm10;
+    uint16_t new_second = 0xd000 | (j1 << 13) | (j2 << 11) | imm11;
 
-    /* reconstruct instruction halves, first = 11110S imm10. */
-    uint16_t new_first = 0xf000 | (signb << 10u & 0x0400) | imm10;
-
-    /* second = 11j1j2 01111 imm11. */
-    uint16_t new_second = 0xf800 | (j1 << 13u & 0x2000) | (j2 << 11 & 0x0800) | imm11;
-
-    /* write back the exact same 4 bytes. */
+    /* write back the 4 bytes. */
     insn[0] = new_first;
     insn[1] = new_second;
     return E_INTT_RESULT_SUCCESS;
@@ -240,7 +240,7 @@ patch_relative_barm64(void* call, const size_t size, const void* new_target) {
  * @return 1 if successful, and 0 o.w.
  */
 int32_t
-patch_call_target(det_call_t* call, void* new_target) {
+patch_call_target(const det_call_t* call, const void* new_target) {
     /* create a write-protect guard for an entire page. */
     guard_t* guard = guard_create(call->call, call->size);
 
@@ -258,7 +258,7 @@ patch_call_target(det_call_t* call, void* new_target) {
             }
             case CS_ARCH_ARM: {
                 /* arm thumb? */
-                if (architecture.mode == CS_MODE_THUMB) {
+                if (call->is_thumb) {
                     if e_intt_passed(patch_relative_barmth(call->call, call->size, new_target)) {
                         break;
                     }

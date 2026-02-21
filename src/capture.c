@@ -1,6 +1,6 @@
 /**
  * @author Sean Hobeck
- * @date 2026-02-19
+ * @date 2026-02-21
  */
 #include <tapi/capture.h>
 
@@ -31,7 +31,7 @@ tapi_make_capture(tapi_sink_t* sink, tapi_stream_t stream) {
     int fds[2];
     if (pipe(fds) == -1) {
         /* NOLINTNEXTLINE */
-        fprintf(stderr, "pipe failed; could not create pipe for stdout and stderr.\n");
+        fprintf(stderr, "tapi_make_capture; pipe failed; could not create pipe for stdout and stderr.\n");
         exit(EXIT_FAILURE);
     }
     capture->piperd = fds[0];
@@ -42,12 +42,14 @@ tapi_make_capture(tapi_sink_t* sink, tapi_stream_t stream) {
     capture->dst_fd = dup(fileno(stream));
     if (capture->dst_fd == -1) {
         /* NOLINTNEXTLINE */
-        fprintf(stderr, "pipe failed; could not create pipe for stdout and stderr.\n");
+        fprintf(stderr, "tapi_make_capture; pipe failed; could not create pipe for stdout and "
+                        "stderr.\n");
         exit(EXIT_FAILURE);
     }
     if (dup2(capture->pipewr, fileno(stream)) == -1) {
         /* NOLINTNEXTLINE */
-        fprintf(stderr, "dup2 failed; could not copy over pipe_wr fd to stdout.\n");
+        fprintf(stderr, "tapi_make_capture; dup2 failed; could not copy over pipe_wr fd to stdout"
+                        ".\n");
         exit(EXIT_FAILURE);
     }
 
@@ -69,7 +71,8 @@ tapi_end_capture(tapi_capture_t* capture) {
     fflush(capture->stream);
     if (dup2(capture->dst_fd, fileno(capture->stream)) == -1) {
         /* NOLINTNEXTLINE */
-        fprintf(stderr, "dup2 failed; could not copy saved fd over to stdout. errno: %d\n", errno);
+        fprintf(stderr, "tapi_end_capture; dup2 failed; could not copy saved fd over to stdout. "
+                        "errno: %d\n", errno);
         return;
     }
     close(capture->dst_fd);
@@ -90,7 +93,8 @@ tapi_end_capture(tapi_capture_t* capture) {
     capture->piperd = -1;
     if (n == -1) {
         /* NOLINTNEXTLINE */
-        fprintf(stderr, "read failed; could not read from stdout pipe. errno: %d\n", errno);
+        fprintf(stderr, "tapi_end_capture; read failed; could not read from stdout pipe. errno: "
+                        "%d\n", errno);
     }
 }
 

@@ -1,6 +1,6 @@
 /**
  * @author Sean Hobeck
- * @date 2026-02-02
+ * @date 2026-02-21
  */
 #include <tapi/mock.h>
 
@@ -46,6 +46,12 @@ void
 tapi_mock_apply(tapi_mock_t* mock) {
     /* determine call info. */
     det_call_t* call = det_call_target(mock->orig, mock->target);
+    if (call == 0x0) {
+        /* NOLINTNEXTLINE */
+        fprintf(stderr, "tapi, mock_apply; cannot find target call in function.\n");
+        return;
+    }
+
     mock->call = call->call;
     mock->size = call->size;
     /* NOLINTNEXTLINE */
@@ -70,7 +76,7 @@ tapi_mock_restore(tapi_mock_t* mock) {
     /* we can't restore a mock that hasn't been applied... */
     if (mock->call == 0x0) {
         /* NOLINTNEXTLINE */
-        fprintf(stderr, "cannot restore unapplied mock.\n");
+        fprintf(stderr, "tapi, mock_restore; cannot restore unapplied mock.\n");
         return;
     }
 

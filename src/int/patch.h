@@ -1,6 +1,6 @@
 /**
  * @author Sean Hobeck
- * @date 2026-01-21
+ * @date 2026-02-21
  */
 #ifndef PATCH_H
 #define PATCH_H
@@ -16,5 +16,5 @@
  * @return 1 if successful, and 0 o.w.
  */
 int32_t
-patch_call_target(det_call_t* call, void* new_target);
+patch_call_target(const det_call_t* call, const void* new_target);
 #endif /* PATCH_H */
