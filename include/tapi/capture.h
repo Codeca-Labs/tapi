@@ -1,6 +1,6 @@
 /**
  * @author Sean Hobeck
- * @date 2026-02-03
+ * @date 2026-02-23
  */
 #ifndef TAPI_CAPTURE_H
 #define TAPI_CAPTURE_H
@@ -46,13 +46,18 @@ TAPI_EXPORT void
 tapi_destroy_capture(tapi_capture_t* capture);
 
 /* quickly make a capture and sink for a set stream. */
-#define tapi_quick_capture(stream) \
-    char buffer[4096u]; \
+#define tapi_quick_capture(stream, size) \
     tapi_sink_t* sink = tapi_make_sink(); \
-    tapi_sink_setdbf(sink, buffer, 4096u); \
+    tapi_sink_setdbf(sink, size); \
     tapi_capture_t* capture = tapi_make_capture(sink, stream);
 
 /* quickly stop capturing a stream; use with tapi_quick_capture to make your tests more readable. */
 #define tapi_quick_end_capture() \
     tapi_end_capture(capture);
+
+/* quickly destroy/ cleanup a capturing stream; use with tapi_quick_capture to make your tests
+ * more readable. */
+#define tapi_quick_destroy_capture() \
+    tapi_destroy_capture(capture); \
+    tapi_destroy_sink(sink);
 #endif /* TAPI_CAPTURE_H */
