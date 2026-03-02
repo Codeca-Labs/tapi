@@ -1,4 +1,5 @@
 /**
+ * \cond INTERNAL
  * @author Sean Hobeck
  * @date 2026-02-21
  */
@@ -15,6 +16,7 @@
 
 /*! @uses memcpy. */
 #include <string.h>
+/** \endcond */
 
 /**
  * @brief create a dyna_t structure with a set item size.

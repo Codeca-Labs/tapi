@@ -62,3 +62,8 @@ dkms.conf
 
 # test logs.
 output_*.txt
+
+# docs
+docs/latex
+docs/html/*
+docs/xml

@@ -1,4 +1,5 @@
 /**
+ * \cond INTERNAL
  * @author Sean Hobeck
  * @date 2026-02-02
  */
@@ -11,3 +12,4 @@ void lt_entry() {
 /** @brief library exit point. */
 __attribute__((destructor))
 void lt_exit() {}
+/** \endcond */
