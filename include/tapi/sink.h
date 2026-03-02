@@ -1,6 +1,6 @@
 /**
  * @author Sean Hobeck
- * @date 2026-02-02
+ * @date 2026-02-23
  */
 #ifndef TAPI_SINK_H
 #define TAPI_SINK_H
@@ -24,7 +24,7 @@ typedef FILE* tapi_stream_t;
  */
 typedef struct {
     struct {
-        char* data; size_t length; /* a pointer to data and length. */
+        char* data; size_t length, capacity; /* a pointer to data and length. */
     } buffer; /* a pre-allocated buffer. */
     enum {
         E_TAPI_SINK_TYPE_NONE = 0x0, /* no dest. set. */
@@ -47,11 +47,10 @@ tapi_make_sink();
  * @brief set a pre-allocated buffer to the destination of the sink.
  *
  * @param sink the sink to set the destination to.
- * @param buffer the pre-allocated buffer to be used in the sink.
  * @param length the size of the pre-allocated buffer.
  */
 TAPI_EXPORT void
-tapi_sink_setdbf(tapi_sink_t* sink, char* buffer, size_t length);
+tapi_sink_setdbf(tapi_sink_t* sink, size_t length);
 
 /**
  * @brief set a pre-allocated stream to the destination of the sink.

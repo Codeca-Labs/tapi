@@ -1,6 +1,6 @@
 /**
  * @author Sean Hobeck
- * @date 2026-02-21
+ * @date 2026-02-23
  */
 #include <tapi/capture.h>
 
@@ -12,6 +12,9 @@
 
 /*! @uses errno. */
 #include <errno.h>
+
+/*! @uses strncpy. */
+#include <string.h>
 
 /**
  * @brief start capturing data written to a specific stream and re-route to a specified sink.
@@ -79,13 +82,22 @@ tapi_end_capture(tapi_capture_t* capture) {
     capture->dst_fd = -1;
 
     /* read all data from pipe, and write it to sink. */
-    char buf[4096u];
+    char buf[4096u + 1u];
 
     /* close writer side so pipe will hit EOF. */
     ssize_t n;
     while ((n = read(capture->piperd, buf, 4096u)) > 0l) {
-        /* todo; all we do is simply write the data to the stream, if it fails then we stop. */
-        fwrite(buf, n, 1u, capture->sink->stream);
+        /* all we do is simply write the data to the stream, if it fails then we stop. */
+        buf[n] = 0x0;
+        if (capture->sink->type == E_TAPI_SINK_TYPE_BUF) {
+            ssize_t remaining = capture->sink->buffer.capacity - capture->sink->buffer.length;
+            if (remaining > 0u) {
+                strncpy(capture->sink->buffer.data + capture->sink->buffer.length, buf, remaining);
+                capture->sink->buffer.length += n;
+            }
+            else break;
+        }
+        else fprintf(capture->sink->stream, "%s", buf);
     }
 
     /* close our read pipe since we are done. */

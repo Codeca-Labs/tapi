@@ -1,6 +1,6 @@
 /**
  * @author Sean Hobeck
- * @date 2026-02-21
+ * @date 2026-02-23
  */
 #include <tapi/sink.h>
 
@@ -26,14 +26,14 @@ tapi_make_sink() {
  * @brief set a pre-allocated buffer to the destination of the sink.
  *
  * @param sink the sink to set the destination to.
- * @param buffer the pre-allocated buffer to be used in the sink.
  * @param length the size of the pre-allocated buffer.
  */
 void
-tapi_sink_setdbf(tapi_sink_t* sink, char* buffer, size_t length) {
+tapi_sink_setdbf(tapi_sink_t* sink, size_t length) {
     /* set the type and then the buffer. */
-    sink->buffer.data = buffer;
-    sink->buffer.length = length;
+    sink->buffer.data = calloc(1u, length + 1u);
+    sink->buffer.length = 0u;
+    sink->buffer.capacity = length;
     sink->type = E_TAPI_SINK_TYPE_BUF;
 
     /* set the stream and then we are done. */
@@ -67,6 +67,7 @@ tapi_sink_setdfp(tapi_sink_t* sink, tapi_stream_t stream) {
  */
 void
 tapi_destroy_sink(tapi_sink_t* sink) {
-    /* if it is a memory stream, we do not free the buffer. */
+    if (sink->type == E_TAPI_SINK_TYPE_BUF)
+        free(sink->buffer.data);
     free(sink);
 };
