@@ -1,4 +1,5 @@
 /**
+ * \cond INTERNAL
  * @author Sean Hobeck
  * @date 2026-02-23
  */
@@ -15,6 +16,7 @@
 
 /*! @uses strncpy. */
 #include <string.h>
+/** \endcond */
 
 /**
  * @brief start capturing data written to a specific stream and re-route to a specified sink.

@@ -1,4 +1,5 @@
 /**
+ * \cond INTERNAL
  * @author Sean Hobeck
  * @date 2026-02-23
  */
@@ -9,6 +10,7 @@
 
 /*! @uses errno. */
 #include <errno.h>
+/** \endcond */
 
 /**
  * @brief make a sink structure to be written to.

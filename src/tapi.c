@@ -1,4 +1,5 @@
 /**
+ * \cond INTERNAL
  * @author Sean Hobeck
  * @date 2026-02-21
  */
@@ -15,6 +16,7 @@
 
 /*! @uses tapi_mock_t, tapi_apply_mock. */
 #include <tapi/mock.h>
+/** \endcond */
 
 /* local testing suite. */
 static dyna_t* l_tests;

@@ -1,4 +1,5 @@
 /**
+ * \cond INTERNAL
  * @author Sean Hobeck
  * @date 2026-02-21
  */
@@ -15,6 +16,7 @@
 
 /*! @uses patch_call_target. */
 #include "patch.h"
+/** \endcond */
 
 /**
  * @brief mock the first call occurrence to a target with a call
