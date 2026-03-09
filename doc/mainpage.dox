@@ -3,30 +3,17 @@
 
 \tableofcontents
 
-tapi is a small C testing framework focused on simple test definitions,
+tapi is a small C testing framework focused on simple test definitions, runtime-based mocking,
 clear assertions, and easy integration into existing projects.
-
-\section getting_started Getting Started
-
-A minimal example:
-
-\code{.c}
-#include <tapi.h>
-
-int addition(int a, int b) {
-    return a + b;
-}
-
-e_tapi_test_result_t test_addition(void) {
-    e_tapi_assert(addition(1, 2) == 3);
-    return TAPI_TEST_RESULT_SUCCESS;
-}
-\endcode
 
 \section modules Modules
 
-- Test creation
+- Building
+- Usage
+- Testing
 - Assertions
-- Test runners
-- Output formatting
+- Mocking and stubbing
+- Output capturing
+- Examples
+- Contribution
 */
