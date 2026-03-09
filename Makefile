@@ -163,7 +163,7 @@ _clean:
 	$(rm) $(bin_dir)
 	$(rm) $(build_dir)
 
-# this isn't the cleanest solution, but it will do (pun).
+# this isn't the cleanest solution, but it will do.
 .PHONY: clean_arch
 clean_arch:
 	$(MAKE) _clean arch=x86_64

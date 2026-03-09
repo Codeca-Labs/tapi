@@ -187,35 +187,35 @@ e_tapi_test_result_t test_conditional_mock() {
 
 int main() {
     /* basic test. */
-    tapi_test_t* test1 = tapi_make_test("test_basic_mock", test_basic_mock);
-    tapi_add_mock_to_test(test1, function, target_function, tested_function_target);
+    tapi_test_t* test1 = tapi_test_make("test_basic_mock", test_basic_mock);
+    tapi_test_add_mock(test1, function, target_function, tested_function_target);
 
     /* architecture-specific tests. */
 #if defined(__x86_64__) || defined(__i386__)
-    tapi_test_t* test2 = tapi_make_test("test_asm_x86_mock", test_asm_x86_mock);
-    tapi_add_mock_to_test(test2, asm_caller_x86, asm_target_x86, mock_asm_target_x86);
+    tapi_test_t* test2 = tapi_test_make("test_asm_x86_mock", test_asm_x86_mock);
+    tapi_test_add_mock(test2, asm_caller_x86, asm_target_x86, mock_asm_target_x86);
 #elif defined(__aarch64__)
-    tapi_test_t* test2 = tapi_make_test("test_asm_aarch64_mock", test_asm_aarch64_mock);
-    tapi_add_mock_to_test(test2, asm_caller_aarch64, asm_target_aarch64, mock_asm_target_aarch64);
+    tapi_test_t* test2 = tapi_test_make("test_asm_aarch64_mock", test_asm_aarch64_mock);
+    tapi_test_add_mock(test2, asm_caller_aarch64, asm_target_aarch64, mock_asm_target_aarch64);
 #elif defined(__arm__)
-    tapi_test_t* test2 = tapi_make_test("test_asm_arm32_mock", test_asm_arm32_mock);
-    tapi_add_mock_to_test(test2, asm_caller_arm32, asm_target_arm32, mock_asm_target_arm32);
-    tapi_test_t* test4 = tapi_make_test("test_asm_thumb_mock", test_asm_thumb_mock);
-    tapi_add_mock_to_test(test4, asm_caller_thumb, asm_target_thumb, mock_asm_target_thumb);
+    tapi_test_t* test2 = tapi_test_make("test_asm_arm32_mock", test_asm_arm32_mock);
+    tapi_test_add_mock(test2, asm_caller_arm32, asm_target_arm32, mock_asm_target_arm32);
+    tapi_test_t* test4 = tapi_test_make("test_asm_thumb_mock", test_asm_thumb_mock);
+    tapi_test_add_mock(test4, asm_caller_thumb, asm_target_thumb, mock_asm_target_thumb);
 #endif
-    tapi_test_t* test_nested = tapi_make_test("test_nested_mock", test_nested_mock);
-    tapi_add_mock_to_test(test_nested, nested_middle, nested_target, mock_nested_target);
-    tapi_test_t* test_cond = tapi_make_test("test_conditional_mock", test_conditional_mock);
-    tapi_add_mock_to_test(test_cond, conditional_caller, conditional_target, mock_conditional_target);
+    tapi_test_t* test_nested = tapi_test_make("test_nested_mock", test_nested_mock);
+    tapi_test_add_mock(test_nested, nested_middle, nested_target, mock_nested_target);
+    tapi_test_t* test_cond = tapi_test_make("test_conditional_mock", test_conditional_mock);
+    tapi_test_add_mock(test_cond, conditional_caller, conditional_target, mock_conditional_target);
 
     /* setup test array. */
 #if defined(__arm__)
     tapi_test_t* tests[] = { test1, test2, test4, test_nested, test_cond };
-    tapi_setup_tests(tests, 5u);
+    tapi_test_setup(tests, 5u);
 #else
     tapi_test_t* tests[] = { test1, test2, test_nested, test_cond };
-    tapi_setup_tests(tests, 4u);
+    tapi_test_setup(tests, 4u);
 #endif
-    tapi_run_tests();
+    tapi_test_run();
     return 0;
 }

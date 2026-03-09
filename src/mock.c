@@ -1,7 +1,7 @@
 /**
- * \cond INTERNAL
+ * \cond
  * @author Sean Hobeck
- * @date 2026-02-21
+ * @date 2026-03-09
  */
 #include <tapi/mock.h>
 

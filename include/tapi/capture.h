@@ -1,22 +1,36 @@
 /**
+ * \cond
  * @author Sean Hobeck
- * @date 2026-02-23
+ * @date 2026-03-09
  */
 #ifndef TAPI_CAPTURE_H
 #define TAPI_CAPTURE_H
 
-/*! @uses size_t, FILE, sink_t, ... */
+/*! @uses size_t, FILE, tapi_sink_t, ... */
 #include <tapi/sink.h>
+/** \endcond */
 
 /**
- * a data structure for capturing outputs for various file streams, but most often used on either
- *  stdout, and or stderr. this allows for quick capturing of what your tested function may print
- *  to the console and or any expected errors it should throw along the way.
+ * @brief a capture structure for redirecting written output data.
+ *
+ * `tapi_capture_t` is a data structure for capturing outputs for various file streams, but most
+ *   often used on either stdout, and or stderr. this allows for quick capturing of what your
+ *   tested function may print to the console and or any expected errors it should throw along
+ *   the way.
+ *
+ * @see tapi_capture_make()
+ * @see tapi_capture_end()
+ * @see tapi_capture_destroy()
  */
 typedef struct {
-    int dst_fd, piperd, pipewr; /* file descriptor for dest., and pipe read & write. */
-    tapi_sink_t* sink; /* sink to write data to. */
-    tapi_stream_t stream; /* the stream to capture. */
+    /** the destination file descriptor (buffer or file). */
+    int dst_fd;
+    /** pipe read(0) & write(1) end for redirection. */
+    int fds[2];
+    /** sink to write data to. */
+    tapi_sink_t* sink;
+    /** the stream to capture. */
+    tapi_stream_t stream;
 } tapi_capture_t;
 
 /**
@@ -27,7 +41,7 @@ typedef struct {
  * @return a pointer to an allocated capture structure.
  */
 TAPI_EXPORT tapi_capture_t*
-tapi_make_capture(tapi_sink_t* sink, tapi_stream_t stream);
+tapi_capture_make(tapi_sink_t* sink, tapi_stream_t stream);
 
 /**
  * @brief stop capturing data from a stream.
@@ -35,7 +49,7 @@ tapi_make_capture(tapi_sink_t* sink, tapi_stream_t stream);
  * @param capture the capture to be ended.
  */
 TAPI_EXPORT void
-tapi_end_capture(tapi_capture_t* capture);
+tapi_capture_end(tapi_capture_t* capture);
 
 /**
  * @brief free a capture structure.
@@ -43,21 +57,23 @@ tapi_end_capture(tapi_capture_t* capture);
  * @param capture the capture to be freed.
  */
 TAPI_EXPORT void
-tapi_destroy_capture(tapi_capture_t* capture);
+tapi_capture_destroy(tapi_capture_t* capture);
 
-/* quickly make a capture and sink for a set stream. */
+/** quickly make a capture and sink for a set stream. */
 #define tapi_quick_capture(stream, size) \
-    tapi_sink_t* sink = tapi_make_sink(); \
+    tapi_sink_t* sink = tapi_sink_make(); \
     tapi_sink_setdbf(sink, size); \
-    tapi_capture_t* capture = tapi_make_capture(sink, stream);
+    tapi_capture_t* capture = tapi_capture_make(sink, stream);
 
-/* quickly stop capturing a stream; use with tapi_quick_capture to make your tests more readable. */
+/** quickly stop capturing; use with tapi_quick_capture to make your tests more readable. */
 #define tapi_quick_end_capture() \
-    tapi_end_capture(capture);
+    tapi_capture_end(capture);
 
-/* quickly destroy/ cleanup a capturing stream; use with tapi_quick_capture to make your tests
- * more readable. */
+/**
+ * quickly destroy/ cleanup a capturing stream; use with tapi_quick_capture to make your tests
+ *   more readable.
+ */
 #define tapi_quick_destroy_capture() \
-    tapi_destroy_capture(capture); \
-    tapi_destroy_sink(sink);
+    tapi_capture_destroy(capture); \
+    tapi_sink_destroy(sink);
 #endif /* TAPI_CAPTURE_H */

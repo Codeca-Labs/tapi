@@ -1,6 +1,7 @@
 /**
+ * \cond
  * @author Sean Hobeck
- * @date 2026-01-26
+ * @date 2026-03-09
  */
 #ifndef TAPI_H
 #define TAPI_H
@@ -12,37 +13,52 @@
 #if (defined(__GNUC__) || defined(__IBMC__))
 #define TAPI_EXPORT __attribute__((visibility("default")))
 #else
-/* if we are using msvc toolchain (winapi).*/
+/* if we are using msvc toolchain (winapi). */
 #if (defined(_MSC_VER))
 #define TAPI_EXPORT __declspec(dllexport)
 #else
 #define TAPI_EXPORT
 #endif
 #endif
+/** \endcond */
 
 /** enum for different types of results from a test. */
 typedef enum {
-    E_TAPI_TEST_RESULT_PASSED = 0x1, /* test passed. */
-    E_TAPI_TEST_RESULT_FAILED, /* test failed. */
-    E_TAPI_TEST_RESULT_SKIPPED, /* test skipped. */
+    E_TAPI_TEST_RESULT_PASSED = 0x1, /** test passed. */
+    E_TAPI_TEST_RESULT_FAILED, /** test failed. */
+    E_TAPI_TEST_RESULT_SKIPPED, /** test skipped. */
 } e_tapi_test_result_t;
 
-/* a function pointer type for test functions. */
+/** a function pointer type for test functions. */
 typedef e_tapi_test_result_t (*tapi_test_func_t)(void);
 
-/* a function pointer type for setup and teardown functions. */
+/** a function pointer type for setup and teardown functions. */
 typedef void (*tapi_gen_func_t)(void);
 
 /**
- * a data structure for tests within the tapi. this contains a name, description, setup, and
- *  teardown functions, as well as other mocking and output capture information.
+ * @brief a singular test within a test suite.
+ *
+ * `tapi_test_t` is a data structure for tests within the tapi. this contains a name, description,
+ *   setup, and teardown functions, as well as other mocking and output capture information.
+ *
+ * @see tapi_test_setup()
+ * @see tapi_test_add()
+ * @see tapi_test_run()
+ * @see tapi_test_create()
+ * @see tapi_test_add_mock()
+ * @see tapi_test_destroy()
  */
 typedef struct {
-    char* name; /* name of the test. */
-    tapi_test_func_t function; /* pointer to the test function. */
-    tapi_gen_func_t setup, teardown; /* pointer to the setup and teardown functions. */
-    dyna_t* mocks; /* dynamic array of mock pointers. */
-    e_tapi_test_result_t result; /* result of calling the test. */
+    /** name of the test. */
+    char* name;
+    /** pointer to the test function. */
+    tapi_test_func_t function;
+    /** pointer to the setup and teardown functions. */
+    tapi_gen_func_t setup, teardown;
+    /** dynamic array of mock pointers. */
+    dyna_t* mocks;
+    /** result of calling the test. */
+    e_tapi_test_result_t result;
 } tapi_test_t;
 
 /**
@@ -52,7 +68,7 @@ typedef struct {
  * @param count the number of tests to be set up.
  */
 TAPI_EXPORT void
-tapi_setup_tests(tapi_test_t** tests, size_t count);
+tapi_test_setup(tapi_test_t** tests, size_t count);
 
 /**
  * @brief add a test to your testing suite.
@@ -60,11 +76,11 @@ tapi_setup_tests(tapi_test_t** tests, size_t count);
  * @param test the test to be added.
  */
 TAPI_EXPORT void
-tapi_add_test(tapi_test_t* test);
+tapi_test_add(tapi_test_t* test);
 
 /** @brief run all the tests set up in concession. */
 TAPI_EXPORT void
-tapi_run_tests(void);
+tapi_test_run(void);
 
 /**
  * @brief make a new test given minimal information.
@@ -73,7 +89,7 @@ tapi_run_tests(void);
  * @param function the test function to be used.
  */
 TAPI_EXPORT tapi_test_t*
-tapi_make_test(const char* name, tapi_test_func_t function);
+tapi_test_make(const char* name, tapi_test_func_t function);
 
 /**
  * @brief add a mock to a certain test.
@@ -84,7 +100,7 @@ tapi_make_test(const char* name, tapi_test_func_t function);
  * @param mocked the mocked result to be redirected to.
  */
 TAPI_EXPORT void
-tapi_add_mock_to_test(tapi_test_t* test, void* tested, void* target, void* mocked);
+tapi_test_add_mock(tapi_test_t* test, void* tested, void* target, void* mocked);
 
 /**
  * @brief free and destroy a list of tests after they have been ran.
@@ -93,8 +109,24 @@ tapi_add_mock_to_test(tapi_test_t* test, void* tested, void* target, void* mocke
  * @param length the number of tests to be freed.
  */
 TAPI_EXPORT void
-tapi_destroy_tests(tapi_test_t** tests, size_t length);
+tapi_test_destroy(tapi_test_t** tests, size_t length);
 
-/* assert on a condition and fail a given test if not met. */
+/** assert on a condition and fail a given test if not met. */
 #define tapi_assert(cond) if (!(cond)) return E_TAPI_TEST_RESULT_FAILED;
+
+/** quickly make a test. */
+#define tapi_quick_test(name, function) \
+    tapi_test_add(tapi_test_make(name, function));
+
+/** quickly make a test with a mock value. */
+#define tapi_quick_test_and_mock(name, function, tested, target, mocked) \
+    tapi_test_add_mock(tapi_test_make(name, function), tested, target, mocked);
+
+/**
+ * quickly create a test suite; variable arguments should be used with tapi_quick_test and
+ *    tapi_quick_test_and_mock.
+ */
+#define tapi_quick_suite(...) \
+    __VA_ARGS__; \
+    tapi_test_run();
 #endif /* TAPI_H */

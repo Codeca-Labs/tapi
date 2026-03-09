@@ -1,20 +1,35 @@
 /**
+ * \cond
  * @author Sean Hobeck
- * @date 2026-02-02
+ * @date 2026-03-09
  */
 #ifndef TAPI_DYNA_H
 #define TAPI_DYNA_H
 
 /*! @uses size_t. */
 #include <stddef.h>
+/** \endcond */
 
 /**
- * a data structure for a dynamically allocated array, it can hold only a set item size, as well
- *  as anything less; can hold items less than the size of a pointer, but you should use the latter.
+ * @brief a dynamic array of pointers.
+ *
+ * `dyna_t` is a data structure for a dynamically allocated array, it can hold only a set item
+ *   size, as well as anything less; can hold items less than the size of a pointer, but you
+ *   should use the latter.
+ *
+ * elements are stored as pointers only, `dyna_t` does not copy or own the objects that are
+ *   pointed to.
+ *
+ * @see dyna_create()
+ * @see dyna_push()
+ * @see dyna_pop()
+ * @see dyna_free()
  */
 typedef struct {
-    void** data; /* array of data. */
-    size_t length, capacity; /* length (count) and capacity of the dynamic array. */
+    /** array of data. */
+    void** data;
+    /** length (count) and capacity of the dynamic array. */
+    size_t length, capacity;
 } dyna_t;
 
 /**

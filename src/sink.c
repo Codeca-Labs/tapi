@@ -1,7 +1,7 @@
 /**
- * \cond INTERNAL
+ * \cond
  * @author Sean Hobeck
- * @date 2026-02-23
+ * @date 2026-03-09
  */
 #include <tapi/sink.h>
 
@@ -18,7 +18,7 @@
  * @return a pointer to an allocated sink.
  */
 tapi_sink_t*
-tapi_make_sink() {
+tapi_sink_make() {
     /* allocate and return. */
     tapi_sink_t* sink = calloc(1u, sizeof *sink);
     return sink;
@@ -68,7 +68,7 @@ tapi_sink_setdfp(tapi_sink_t* sink, tapi_stream_t stream) {
  * @param sink the sink to be freed.
  */
 void
-tapi_destroy_sink(tapi_sink_t* sink) {
+tapi_sink_destroy(tapi_sink_t* sink) {
     if (sink->type == E_TAPI_SINK_TYPE_BUF)
         free(sink->buffer.data);
     free(sink);

@@ -1,7 +1,7 @@
 /**
- * \cond INTERNAL
+ * \cond
  * @author Sean Hobeck
- * @date 2026-02-21
+ * @date 2026-03-09
  */
 #include <tapi/tapi.h>
 
@@ -28,7 +28,7 @@ static dyna_t* l_tests;
  * @param count the number of tests to be set up.
  */
 void
-tapi_setup_tests(tapi_test_t** tests, size_t count) {
+tapi_test_setup(tapi_test_t** tests, size_t count) {
     /* if we already have tests. */
     if (l_tests != 0x0) {
         /* NOLINTNEXTLINE */
@@ -48,13 +48,16 @@ tapi_setup_tests(tapi_test_t** tests, size_t count) {
  * @param test the test to be added.
  */
 void
-tapi_add_test(tapi_test_t* test) {
+tapi_test_add(tapi_test_t* test) {
+    /* if we don't have tests. */
+    if (l_tests == 0x0)
+        l_tests = dyna_create();
     dyna_push(l_tests, test); /* very simple push. */
 };
 
 /** @brief run all the tests set up in concession. */
 void
-tapi_run_tests(void) {
+tapi_test_run(void) {
     /* iterate through each test, */
     size_t passed = 0u;
     _foreach_it(l_tests, tapi_test_t*, test, i)
@@ -93,7 +96,7 @@ tapi_run_tests(void) {
  * @param function the test function to be used.
  */
 tapi_test_t*
-tapi_make_test(const char* name, tapi_test_func_t function) {
+tapi_test_make(const char* name, tapi_test_func_t function) {
     /* allocate and make the structure. */
     tapi_test_t* test = calloc(2, sizeof *test);
     size_t length = strlen(name);
@@ -114,7 +117,7 @@ tapi_make_test(const char* name, tapi_test_func_t function) {
  * @param mocked the mocked result to be redirected to.
  */
 void
-tapi_add_mock_to_test(tapi_test_t* test, void* tested, void* target, void* mocked) {
+tapi_test_add_mock(tapi_test_t* test, void* tested, void* target, void* mocked) {
     /* create a dynamic array if it doesn't already exist. */
     if (test->mocks == 0x0)
         test->mocks = dyna_create();
@@ -131,7 +134,7 @@ tapi_add_mock_to_test(tapi_test_t* test, void* tested, void* target, void* mocke
  * @param length the number of tests to be freed.
  */
 void
-tapi_destroy_tests(tapi_test_t** tests, size_t length) {
+tapi_test_destroy(tapi_test_t** tests, size_t length) {
     /* free each test but not the list itself, that isn't ours. */
     for (size_t i = 0; i < length; i++) {
         dyna_free(tests[i]->mocks);

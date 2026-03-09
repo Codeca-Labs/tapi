@@ -1,6 +1,7 @@
 /**
+ * \cond
  * @author Sean Hobeck
- * @date 2026-01-25
+ * @date 2026-03-09
  */
 #ifndef TAPI_MOCK_H
 #define TAPI_MOCK_H
@@ -10,19 +11,31 @@
 
 /*! @uses size_t. */
 #include <stddef.h>
+/** \endcond */
 
 /**
- * a data structure for mocking the result of a call within a tested function. this is mainly
- *  used for isolation from other functions, and to primarily test your functions logic,
- *  arithmetic, and functionality. mocks/ stub functions can be as simple as returning a
- *  value, or as complex as you need them to be; complexity is completely left up to the user.
+ * @brief a patch-based runtime mock for redirecting calls within a tested function.
+ *
+ * `tapi_mock_t` is a data structure for mocking the result of a call within a tested function. this
+ *   is mainly used for isolation from other functions, and to primarily test your functions logic,
+ *   arithmetic, and functionality. mocks/ stub functions can be as simple as returning a
+ *   value, or as complex as you need them to be; complexity is completely left up to the user.
+ *
+ * @see tapi_mock_create()
+ * @see tapi_mock_apply()
+ * @see tapi_mock_restore()
  */
 typedef struct {
-    void* orig, *mocked, *target; /* original, mocked, and target functions. */
-    void* call; /* address of the call in the original function. */
-    size_t size, fun_size; /* size of the patch & function. */
-    unsigned char orig_bytes[32u], mocked_bytes[32u];
-    /* first 32 bytes of original and mocked functions */
+    /** original, mocked, and target functions. */
+    void* orig, *mocked, *target;
+    /** address of the call in the original function. */
+    void* call;
+    /** size of the patch and function. */
+    size_t size, fun_size;
+    /** first 32 bytes of the original target function. */
+    unsigned char orig_bytes[32u];
+    /** first 32 bytes of the mocked function. */
+    unsigned char mocked_bytes[32u];
 } tapi_mock_t;
 
 /**
@@ -54,23 +67,23 @@ tapi_mock_apply(tapi_mock_t* mock);
 TAPI_EXPORT void
 tapi_mock_restore(tapi_mock_t* mock);
 
-/* create a simple mock to return a given value. */
+/** create a simple mock to return a given value. */
 #define tapi_mock_return(func_name, return_type, return_value) \
     return_type func_name() { return return_value; }
 
-/* create a mock to return a given integer. */
+/** create a mock to return a given integer. */
 #define tapi_mock_return_int(func_name, return_value) \
     tapi_mock_return(func_name, int, return_value)
 
-/* create a mock to return a given pointer. */
+/** create a mock to return a given pointer. */
 #define tapi_mock_return_ptr(func_name, return_value) \
     tapi_mock_return(func_name, void*, return_value)
 
-/* create a mock to return null. */
+/** create a mock to return null. */
 #define tapi_mock_return_null(func_name) \
     tapi_mock_return(func_name, void*, null)
 
-/* create a mock to return a string/ string literal. */
+/** create a mock to return a string/ string literal. */
 #define tapi_mock_return_strl(func_name, return_value) \
     tapi_mock_return(func_name, char*, return_value)
 #endif /* TAPI_MOCK_H */

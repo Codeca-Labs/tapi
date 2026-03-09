@@ -76,26 +76,26 @@ e_tapi_test_result_t test_capture_stderr() {
 
 e_tapi_test_result_t test_capture_both_streams() {
     /* arrange. */
-    tapi_sink_t* sink1 = tapi_make_sink();
-    tapi_sink_t* sink2 = tapi_make_sink();
+    tapi_sink_t* sink1 = tapi_sink_make();
+    tapi_sink_t* sink2 = tapi_sink_make();
     tapi_sink_setdbf(sink1, 256);
     tapi_sink_setdbf(sink2, 256);
-    tapi_capture_t* cap1 = tapi_make_capture(sink1, stdout);
-    tapi_capture_t* cap2 = tapi_make_capture(sink2, stderr);
+    tapi_capture_t* cap1 = tapi_capture_make(sink1, stdout);
+    tapi_capture_t* cap2 = tapi_capture_make(sink2, stderr);
 
     /* act. */
     printf("stdout output");
     fprintf(stderr, "stderr output");
-    tapi_end_capture(cap1);
-    tapi_end_capture(cap2);
+    tapi_capture_end(cap1);
+    tapi_capture_end(cap2);
 
     /* assert. */
     tapi_assert(strcmp(sink1->buffer.data, "stdout output") == 0);
     tapi_assert(strcmp(sink2->buffer.data, "stderr output") == 0);
-    tapi_destroy_capture(cap1);
-    tapi_destroy_capture(cap2);
-    tapi_destroy_sink(sink1);
-    tapi_destroy_sink(sink2);
+    tapi_capture_destroy(cap1);
+    tapi_capture_destroy(cap2);
+    tapi_sink_destroy(sink1);
+    tapi_sink_destroy(sink2);
     return E_TAPI_TEST_RESULT_PASSED;
 }
 
@@ -116,18 +116,18 @@ e_tapi_test_result_t test_capture_large_output() {
 
 e_tapi_test_result_t test_capture_overflow() {
     /* arrange. */
-    tapi_sink_t* small_sink = tapi_make_sink();
+    tapi_sink_t* small_sink = tapi_sink_make();
     tapi_sink_setdbf(small_sink, 16u);
 
     /* act. */
-    tapi_capture_t* cap = tapi_make_capture(small_sink, stdout);
+    tapi_capture_t* cap = tapi_capture_make(small_sink, stdout);
     printf("this is a very long string that exceeds the buffer");
-    tapi_end_capture(cap);
+    tapi_capture_end(cap);
 
     /* assert. */
     tapi_assert(strlen(small_sink->buffer.data) <= 16);
-    tapi_destroy_capture(cap);
-    tapi_destroy_sink(small_sink);
+    tapi_capture_destroy(cap);
+    tapi_sink_destroy(small_sink);
     return E_TAPI_TEST_RESULT_PASSED;
 }
 
@@ -179,23 +179,23 @@ e_tapi_test_result_t test_capture_whitespace() {
 }
 
 int main() {
-    tapi_test_t* test_empty = tapi_make_test("test_capture_empty", test_capture_empty);
-    tapi_test_t* test_single_line = tapi_make_test("test_single_line", test_capture_single_line);
-    tapi_test_t* test_multiline = tapi_make_test("test_multiline", test_capture_multiline);
-    tapi_test_t* test_stderr = tapi_make_test("test_stderr", test_capture_stderr);
-    tapi_test_t* test_both_streams = tapi_make_test("test_both_streams", test_capture_both_streams);
-    tapi_test_t* test_large_output = tapi_make_test("test_large_output", test_capture_large_output);
-    tapi_test_t* test_overflow = tapi_make_test("test_overflow", test_capture_overflow);
-    tapi_test_t* test_formats = tapi_make_test("test_formats", test_capture_formats);
-    tapi_test_t* test_special_chars = tapi_make_test("test_special_chars", test_capture_special_chars);
-    tapi_test_t* test_whitespace = tapi_make_test("test_whitespace", test_capture_whitespace);
+    tapi_test_t* test_empty = tapi_test_make("test_capture_empty", test_capture_empty);
+    tapi_test_t* test_single_line = tapi_test_make("test_single_line", test_capture_single_line);
+    tapi_test_t* test_multiline = tapi_test_make("test_multiline", test_capture_multiline);
+    tapi_test_t* test_stderr = tapi_test_make("test_stderr", test_capture_stderr);
+    tapi_test_t* test_both_streams = tapi_test_make("test_both_streams", test_capture_both_streams);
+    tapi_test_t* test_large_output = tapi_test_make("test_large_output", test_capture_large_output);
+    tapi_test_t* test_overflow = tapi_test_make("test_overflow", test_capture_overflow);
+    tapi_test_t* test_formats = tapi_test_make("test_formats", test_capture_formats);
+    tapi_test_t* test_special_chars = tapi_test_make("test_special_chars", test_capture_special_chars);
+    tapi_test_t* test_whitespace = tapi_test_make("test_whitespace", test_capture_whitespace);
     tapi_test_t* tests[] = { \
         test_empty, test_single_line, test_multiline, \
         test_stderr, test_both_streams, test_large_output, \
         test_overflow, test_formats, test_special_chars, \
         test_whitespace
     };
-    tapi_setup_tests(tests, 10u);
-    tapi_run_tests();
+    tapi_test_setup(tests, 10u);
+    tapi_test_run();
     return 0;
 }
