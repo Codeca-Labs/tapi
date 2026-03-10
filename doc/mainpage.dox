@@ -3,17 +3,25 @@
 
 \tableofcontents
 
-tapi is a small C testing framework focused on simple test definitions, runtime-based mocking,
-clear assertions, and easy integration into existing projects.
+\section description Description
+
+`tapi` - a Testing API is a small C17 testing framework focused on simple test
+definitions, runtime-based mocking, clear assertions, and quick integration into existing projects.
+The idea for the framework stemmed from my personal need to write unit tests for some programs that
+I had written in C. When looking for a stable testing framework, I noticed that none of the existing
+options were quite what I wanted, some of which (*like GoogleTest, CMock, CMocka*) which were
+either too heavyweight or implemented mocking in a significantly more complicated way. My goal with
+this framework is to provide a simple, easy-to-use, cross-platform testing framework that can be
+integrated into existing projects, with a very simple form of mocking (*stub and patch*). If you
+want to learn more about the design of the framework, you can read more about \ref mocking
+"mocking, patching," and \ref capturing "capturing" here.
 
 \section modules Modules
 
-- Building
-- Usage
-- Testing
-- Assertions
-- Mocking and stubbing
-- Output capturing
-- Examples
-- Contribution
+- \subpage building
+- \subpage testing
+- \subpage mocking
+- \subpage capturing
+- \subpage examples
+- \subpage contribution
 */

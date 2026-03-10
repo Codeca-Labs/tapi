@@ -111,6 +111,9 @@ tapi_test_add_mock(tapi_test_t* test, void* tested, void* target, void* mocked);
 TAPI_EXPORT void
 tapi_test_destroy(tapi_test_t** tests, size_t length);
 
+#define tapi_concat_impl(a, b) a##b
+#define tapi_concat(a, b) tapi_concat_impl(a, b)
+
 /** assert on a condition and fail a given test if not met. */
 #define tapi_assert(cond) if (!(cond)) return E_TAPI_TEST_RESULT_FAILED;
 
@@ -120,7 +123,11 @@ tapi_test_destroy(tapi_test_t** tests, size_t length);
 
 /** quickly make a test with a mock value. */
 #define tapi_quick_test_and_mock(name, function, tested, target, mocked) \
-    tapi_test_add_mock(tapi_test_make(name, function), tested, target, mocked);
+    do { \
+        tapi_test_t* tapi_concat(_gentest_, __LINE__) = tapi_test_make(name, function); \
+        tapi_test_add_mock(tapi_concat(_gentest_, __LINE__), tested, target, mocked); \
+        tapi_test_add(tapi_concat(_gentest_, __LINE__)); \
+    } while(0);
 
 /**
  * quickly create a test suite; variable arguments should be used with tapi_quick_test and

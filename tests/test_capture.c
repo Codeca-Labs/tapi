@@ -1,6 +1,6 @@
 /**
  * @author Sean Hobeck
- * @date 2026-02-23
+ * @date 2026-03-09
  */
 #include <tapi/tapi.h>
 
@@ -179,23 +179,16 @@ e_tapi_test_result_t test_capture_whitespace() {
 }
 
 int main() {
-    tapi_test_t* test_empty = tapi_test_make("test_capture_empty", test_capture_empty);
-    tapi_test_t* test_single_line = tapi_test_make("test_single_line", test_capture_single_line);
-    tapi_test_t* test_multiline = tapi_test_make("test_multiline", test_capture_multiline);
-    tapi_test_t* test_stderr = tapi_test_make("test_stderr", test_capture_stderr);
-    tapi_test_t* test_both_streams = tapi_test_make("test_both_streams", test_capture_both_streams);
-    tapi_test_t* test_large_output = tapi_test_make("test_large_output", test_capture_large_output);
-    tapi_test_t* test_overflow = tapi_test_make("test_overflow", test_capture_overflow);
-    tapi_test_t* test_formats = tapi_test_make("test_formats", test_capture_formats);
-    tapi_test_t* test_special_chars = tapi_test_make("test_special_chars", test_capture_special_chars);
-    tapi_test_t* test_whitespace = tapi_test_make("test_whitespace", test_capture_whitespace);
-    tapi_test_t* tests[] = { \
-        test_empty, test_single_line, test_multiline, \
-        test_stderr, test_both_streams, test_large_output, \
-        test_overflow, test_formats, test_special_chars, \
-        test_whitespace
-    };
-    tapi_test_setup(tests, 10u);
-    tapi_test_run();
+    tapi_quick_test("test_empty", test_capture_empty);
+    tapi_quick_test("test_single_line", test_capture_single_line);
+    tapi_quick_test("test_multiline", test_capture_multiline);
+    tapi_quick_test("test_stderr", test_capture_stderr);
+    tapi_quick_test("test_both_streams", test_capture_both_streams);
+    tapi_quick_test("test_large_output", test_capture_large_output);
+    tapi_quick_test("test_overflow", test_capture_overflow);
+    tapi_quick_test("test_formats", test_capture_formats);
+    tapi_quick_test("test_special_chars", test_capture_special_chars);
+    tapi_quick_test("test_whitespace", test_capture_whitespace);
+    tapi_quick_suite();
     return 0;
 }
